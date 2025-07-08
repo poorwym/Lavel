@@ -1,0 +1,68 @@
+.Lavel/
+htmlcov/
+.pytest_cache/
+.DS_Store
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Python常见忽略文件
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+*.log
+*.sqlite3
+*.db
+*.pot
+*.mo
+*.cache
+*.coverage
+.coverage.*
+.tox/
+.mypy_cache/
+.pyre/
+.pytype/
+*.bak
+*.swp
+*.swo
+*.orig
+*.tmp
+*.vscode/
+.idea/
+*.iml
+*.ipynb_checkpoints
+# Jupyter Notebook输出
+.ipynb_checkpoints/
+# VSCode工作区设置
+.vscode/
+# 本地测试报告
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+# pipenv/poetry/uv等虚拟环境
+Pipfile.lock
+poetry.lock
+uv.lock
+# 虚拟环境目录
+venv/
+.venv/
+ENV/
+env/
+# 本地开发工具
+*.local
+# macOS系统文件
+.DS_Store
+# Windows系统文件
+Thumbs.db
+# 单元测试快照
+__snapshots__/
