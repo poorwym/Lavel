@@ -1,0 +1,51 @@
+---
+alwaysApply: true
+---
+项目模块设计
+我们的项目名称叫Lavel
+整个项目分为以下五个模块:
+Knowledges, Todo, Review, Uni，Thoughts
+其中Uni是我们的一个llm agent
+我们项目的核心体验在于任务驱动和llm管理. 具体的体验如下:
+
+用户通过复制或者截图捕捉任何需要的消息,通过某种快捷键或者直接贴给Lavel, 然后Lavel会同时对当前内容进行截屏. 然后对屏幕内容进行简短的描述和OCR识别提取文字,如果在浏览器内还会自动截取url,然后他会统一保存为一个轻量级的note. 在之后的特定时间,系统会主动的提醒用户进行整理. 用户可以通过一些点击操作和一些prompt来让Uni对轻量级note进行归档. 这些note会被归档为知识或者Todo.同时不管是Todo还是知识,都具有统一的Tag管理机制,允许使用tag来管理.
+
+如果归档为知识, 会在Knowledges模块中创建一个knowledge,然后拥有类似cursor的llm友好的编辑体验.但是编辑体验是类似obsidian的所见即所得.
+
+Thoughts和Knowledges本质上是严肃/非严肃的差别。Thoughts可以存放简短的想法。仍然是以note卡片式。但是当我们希望upgrade想法到详细的想法，它会被转到Knowledges界面，然后拥有同样的Cursor操作界面,相当于就是一侧是完整的大量文档内容,一侧是。要加Tag（？）
+
+如果归档为Todo, 会在Todo中创建一个一级任务,同时llm会自动将一级任务展开为细分任务(主要取决于这个轻量级note的内容和prompt描述), 并且拥有类似checkbox的机制,可以检查相关的任务的完成情况(未来会拓展类似成就机制,增强用户的正反馈)细分任务用DAG来表示,同时暂定用mermaid来渲染，或者手写一个带checkbox的DAG装置。
+- 需要用户调研+设计交互。设计好接口先。
+- 可以link到知识库。这应该作为我们的亮点。
+
+所有的LLM可以看到同样的上下文。
+
+我们需要在设计之初就考虑到不同语言的转换问题.同时也要考虑到不同主题的转换问题.
+
+我们希望Knowledges中的所有知识可以相互引用, 具有类似obsidian的链接机制.
+
+整体架构采用前后端分离的模式,会在Knowledges所在的目录运行一个fastapi启动的后端.前端采用React+SWC+Typescript, electron打包,后端使用fastapi,用uv做环境管理. 同时采用Monorepo架构,最终打包成不同平台的客户端进行分发.
+
+持久化上,不使用数据库,而是全部用json文件来管理.
+
+我们需要有完整的快捷键体系, 允许在不同模块间相互跳转,撤销编辑,光标快速跳转等,同时还要兼容不同平台的操作习惯.
+
+我们拥有一个.Lavel/文件夹, 整体采用block作为最小可编辑单元,每一个block的结构采用双向链表的串形结构:
+然后.Lavel/中核心子目录如下(后续也有plugins,logs等):
+blocks/
+knowledges/
+thoughts/
+todos/
+reviews/
+blocks中存储每个对应的元信息,然后剩下的文件夹中:
+knowledges中存储对应的blocks头部和其他必要的信息(如tags,description,uuid, name等)
+Thoughts, todos和reviews都同理.
+
+允许knowledges导出为markdown文档.
+
+Uni
+整体采用multi-agent架构. uni是一个llm agent, 他会分管四个小的agent, Mnemo, Muse, Chronos, Ananke
+Mnemo负责控制knowlegde相关的api
+Muse负责控制thoughts相关的api
+Chronos负责控制Todos相关的api
+Ananke负责控制Reviews相关api,使用simplellmfunc和simpleagent来完成.(这两个是自己写的库)
