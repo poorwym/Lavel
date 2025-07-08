@@ -6,14 +6,25 @@ Knowledges API 模块
 """
 
 from fastapi import APIRouter, HTTPException, Query, Response
-from typing import List, Optional, Dict, Any
+from typing import Optional
 
 from service.resources import knowledges_service
+from schemas.resources.knowledge import (
+    CreateKnowledgeRequest,
+    UpdateKnowledgeMetadataRequest,
+    LinkBlockToKnowledgeRequest,
+    KnowledgeResponse,
+    KnowledgeListResponse,
+    KnowledgeBacklinksResponse,
+    LinkBlockToKnowledgeResponse,
+    DeleteKnowledgeResponse,
+    KnowledgeSearchResponse
+)
 
 router = APIRouter()
 
 
-@router.get("/")
+@router.get("/", response_model=KnowledgeListResponse)
 async def list_knowledges(
     page: int = Query(1, ge=1, description="页码"),
     limit: int = Query(20, ge=1, le=100, description="每页数量"),
@@ -37,28 +48,23 @@ async def list_knowledges(
     return await knowledges_service.list_knowledges(page, limit, tags, search)
 
 
-@router.post("/")
-async def create_knowledge(knowledge_data: Dict[str, Any]):
+@router.post("/", response_model=KnowledgeResponse)
+async def create_knowledge(knowledge_request: CreateKnowledgeRequest):
     """
     新建知识文档
     
     创建一个新的结构化知识文档，自动生成UUID和时间戳
     
     Args:
-        knowledge_data: 包含知识文档信息的字典
-                       - title: 文档标题
-                       - description: 文档描述（可选）
-                       - tags: 标签列表
-                       - content_blocks: 内容块ID列表（可选）
+        knowledge_request: 创建知识文档的请求数据
                        
     Returns:
         创建的知识文档信息，包括生成的ID和时间戳
     """
-    knowledge = await knowledges_service.create_knowledge(knowledge_data)
-    return knowledge.model_dump()
+    return await knowledges_service.create_knowledge(knowledge_request)
 
 
-@router.get("/search")
+@router.get("/search", response_model=KnowledgeSearchResponse)
 async def search_knowledges(
     query: str = Query(..., min_length=1, description="搜索关键词")
 ):
@@ -71,11 +77,10 @@ async def search_knowledges(
     Returns:
         匹配的知识文档列表
     """
-    results = await knowledges_service.search_knowledges(query)
-    return {"results": results}
+    return await knowledges_service.search_knowledges(query)
 
 
-@router.get("/{knowledge_id}")
+@router.get("/{knowledge_id}", response_model=KnowledgeResponse)
 async def get_knowledge(knowledge_id: str):
     """
     获取知识文档详情
@@ -98,13 +103,13 @@ async def get_knowledge(knowledge_id: str):
     knowledge = await knowledges_service.get_knowledge(knowledge_id)
     if not knowledge:
         raise HTTPException(status_code=404, detail="Knowledge not found")
-    return knowledge.model_dump()
+    return knowledge
 
 
-@router.patch("/{knowledge_id}")
+@router.patch("/{knowledge_id}", response_model=KnowledgeResponse)
 async def update_knowledge_metadata(
     knowledge_id: str, 
-    metadata: Dict[str, Any]
+    metadata_request: UpdateKnowledgeMetadataRequest
 ):
     """
     更新知识文档的元数据
@@ -113,10 +118,7 @@ async def update_knowledge_metadata(
     
     Args:
         knowledge_id: 要更新的知识文档ID
-        metadata: 包含要更新的元数据字段
-                 - title: 新标题（可选）
-                 - description: 新描述（可选）
-                 - tags: 新标签列表（可选）
+        metadata_request: 包含要更新的元数据字段
                  
     Returns:
         更新后的知识文档元数据
@@ -124,13 +126,13 @@ async def update_knowledge_metadata(
     Raises:
         HTTPException: 当知识文档不存在时返回404
     """
-    knowledge = await knowledges_service.update_knowledge_metadata(knowledge_id, metadata)
+    knowledge = await knowledges_service.update_knowledge_metadata(knowledge_id, metadata_request)
     if not knowledge:
         raise HTTPException(status_code=404, detail="Knowledge not found")
-    return knowledge.model_dump()
+    return knowledge
 
 
-@router.delete("/{knowledge_id}")
+@router.delete("/{knowledge_id}", response_model=DeleteKnowledgeResponse)
 async def delete_knowledge(knowledge_id: str):
     """
     删除知识文档
@@ -152,7 +154,7 @@ async def delete_knowledge(knowledge_id: str):
     success = await knowledges_service.delete_knowledge(knowledge_id)
     if not success:
         raise HTTPException(status_code=404, detail="Knowledge not found")
-    return {"success": True, "message": "Knowledge deleted successfully"}
+    return DeleteKnowledgeResponse(success=True, message="Knowledge deleted successfully")
 
 
 @router.post("/{knowledge_id}/export")
@@ -191,7 +193,7 @@ async def export_knowledge_to_markdown(
     )
 
 
-@router.get("/{knowledge_id}/backlinks")
+@router.get("/{knowledge_id}/backlinks", response_model=KnowledgeBacklinksResponse)
 async def get_knowledge_backlinks(knowledge_id: str):
     """
     获取知识文档的反向引用列表
@@ -217,10 +219,10 @@ async def get_knowledge_backlinks(knowledge_id: str):
     return backlinks
 
 
-@router.post("/{knowledge_id}/link-block")
+@router.post("/{knowledge_id}/link-block", response_model=LinkBlockToKnowledgeResponse)
 async def link_block_to_knowledge(
     knowledge_id: str, 
-    link_data: Dict[str, Any]
+    link_request: LinkBlockToKnowledgeRequest
 ):
     """
     将block链接到知识文档
@@ -229,10 +231,7 @@ async def link_block_to_knowledge(
     
     Args:
         knowledge_id: 知识文档ID
-        link_data: 链接信息
-                  - block_id: 要链接的block ID
-                  - position: 插入位置（可选，默认追加到末尾）
-                  - link_type: 链接类型（可选，如"reference", "embed"等）
+        link_request: 链接信息
                   
     Returns:
         链接操作的结果信息
@@ -240,7 +239,7 @@ async def link_block_to_knowledge(
     Raises:
         HTTPException: 当知识文档或block不存在时返回404
     """
-    result = await knowledges_service.link_block_to_knowledge(knowledge_id, link_data)
+    result = await knowledges_service.link_block_to_knowledge(knowledge_id, link_request)
     if not result:
         raise HTTPException(status_code=404, detail="Knowledge or block not found")
     return result

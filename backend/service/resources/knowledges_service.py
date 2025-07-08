@@ -12,7 +12,20 @@ from datetime import datetime
 from typing import List, Optional, Dict, Any
 from pathlib import Path
 
-from schemas.resources.knowledge import Knowledge
+from schemas.resources.knowledge import (
+    Knowledge, 
+    CreateKnowledgeRequest,
+    UpdateKnowledgeMetadataRequest,
+    LinkBlockToKnowledgeRequest,
+    KnowledgeResponse,
+    KnowledgeListResponse,
+    KnowledgeBacklinksResponse,
+    LinkBlockToKnowledgeResponse,
+    KnowledgeSearchResponse,
+    KnowledgeSearchResultItem,
+    BacklinkItem,
+    PaginationInfo
+)
 from utils.config import Config
 from . import blocks_service
 
@@ -65,12 +78,27 @@ def list_all_knowledges() -> List[Knowledge]:
     return knowledges
 
 
+def _knowledge_to_response(knowledge: Knowledge) -> KnowledgeResponse:
+    """将Knowledge模型转换为KnowledgeResponse"""
+    return KnowledgeResponse(
+        uuid=knowledge.uuid,
+        title=knowledge.title,
+        description=knowledge.description,
+        tags=knowledge.tags,
+        root_block_id=knowledge.root_block_id,
+        linked_blocks=knowledge.linked_blocks or [],
+        backlinks=knowledge.backlinks or [],
+        created_at=knowledge.created_at,
+        updated_at=knowledge.updated_at
+    )
+
+
 async def list_knowledges(
     page: int = 1,
     limit: int = 20,
     tags: Optional[str] = None,
     search: Optional[str] = None
-) -> Dict[str, Any]:
+) -> KnowledgeListResponse:
     """列出知识文档，支持分页、标签筛选和搜索"""
     all_knowledges = list_all_knowledges()
     
@@ -99,18 +127,22 @@ async def list_knowledges(
     end_idx = start_idx + limit
     paginated_knowledges = all_knowledges[start_idx:end_idx]
     
-    return {
-        "knowledges": [knowledge.model_dump() for knowledge in paginated_knowledges],
-        "pagination": {
-            "page": page,
-            "limit": limit,
-            "total": total,
-            "total_pages": (total + limit - 1) // limit
-        }
-    }
+    # 转换为响应模型
+    knowledge_responses = [_knowledge_to_response(knowledge) for knowledge in paginated_knowledges]
+    pagination_info = PaginationInfo(
+        page=page,
+        limit=limit,
+        total=total,
+        total_pages=(total + limit - 1) // limit
+    )
+    
+    return KnowledgeListResponse(
+        knowledges=knowledge_responses,
+        pagination=pagination_info
+    )
 
 
-async def create_knowledge(knowledge_data: Dict[str, Any]) -> Knowledge:
+async def create_knowledge(knowledge_request: CreateKnowledgeRequest) -> KnowledgeResponse:
     """创建新的知识文档"""
     knowledge_id = str(uuid.uuid4())
     now = datetime.now()
@@ -118,54 +150,52 @@ async def create_knowledge(knowledge_data: Dict[str, Any]) -> Knowledge:
     # 创建根 block
     from schemas.resources.block import CreateBlockRequest
     root_block_request = CreateBlockRequest(
-        content=knowledge_data.get("content", f"# {knowledge_data.get('title', 'Untitled')}\n\n"),
+        content=knowledge_request.content or f"# {knowledge_request.title}\n\n",
         parent_id=None
     )
     root_block = await blocks_service.create_block(root_block_request)
     
     knowledge = Knowledge(
         uuid=knowledge_id,
-        title=knowledge_data.get("title", "Untitled"),
-        description=knowledge_data.get("description", ""),
-        tags=knowledge_data.get("tags", []),
-        root_block_id=root_block.id,  # root_block现在是BlockResponse对象
+        title=knowledge_request.title,
+        description=knowledge_request.description,
+        tags=knowledge_request.tags,
+        root_block_id=root_block.id,
         created_at=now,
         updated_at=now,
-        linked_blocks=knowledge_data.get("linked_blocks", []),
+        linked_blocks=knowledge_request.linked_blocks or [],
         backlinks=[]
     )
     
     save_knowledge(knowledge)
-    return knowledge
+    return _knowledge_to_response(knowledge)
 
 
-async def get_knowledge(knowledge_id: str) -> Optional[Knowledge]:
+async def get_knowledge(knowledge_id: str) -> Optional[KnowledgeResponse]:
     """获取知识文档详情"""
-    return load_knowledge(knowledge_id)
+    knowledge = load_knowledge(knowledge_id)
+    if not knowledge:
+        return None
+    return _knowledge_to_response(knowledge)
 
 
 async def update_knowledge_metadata(
     knowledge_id: str, 
-    metadata: Dict[str, Any]
-) -> Optional[Knowledge]:
+    metadata_request: UpdateKnowledgeMetadataRequest
+) -> Optional[KnowledgeResponse]:
     """更新知识文档的元数据"""
     knowledge = load_knowledge(knowledge_id)
     if not knowledge:
         return None
     
-    # 更新字段
-    if "title" in metadata:
-        knowledge.title = metadata["title"]
-    if "description" in metadata:
-        knowledge.description = metadata["description"]
-    if "tags" in metadata:
-        knowledge.tags = metadata["tags"]
-    if "linked_blocks" in metadata:
-        knowledge.linked_blocks = metadata["linked_blocks"]
+    # 更新字段（只更新非None的字段）
+    update_data = metadata_request.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(knowledge, field, value)
     
     knowledge.updated_at = datetime.now()
     save_knowledge(knowledge)
-    return knowledge
+    return _knowledge_to_response(knowledge)
 
 
 async def delete_knowledge(knowledge_id: str) -> bool:
@@ -227,7 +257,7 @@ async def export_knowledge_to_markdown(
     return "\n".join(markdown_content)
 
 
-async def get_knowledge_backlinks(knowledge_id: str) -> Optional[Dict[str, List[Dict]]]:
+async def get_knowledge_backlinks(knowledge_id: str) -> Optional[KnowledgeBacklinksResponse]:
     """获取知识文档的反向引用列表"""
     knowledge = load_knowledge(knowledge_id)
     if not knowledge:
@@ -242,32 +272,34 @@ async def get_knowledge_backlinks(knowledge_id: str) -> Optional[Dict[str, List[
     
     # 查找引用当前知识的其他知识文档
     all_knowledges = list_all_knowledges()
+    knowledge_backlinks = []
     for k in all_knowledges:
         if k.uuid != knowledge_id and knowledge_id in (k.linked_blocks or []):
-            backlinks["knowledges"].append({
-                "uuid": k.uuid,
-                "title": k.title,
-                "created_at": k.created_at
-            })
+            knowledge_backlinks.append(BacklinkItem(
+                uuid=k.uuid,
+                title=k.title,
+                created_at=k.created_at
+            ))
     
-    return backlinks
+    return KnowledgeBacklinksResponse(
+        knowledges=knowledge_backlinks,
+        thoughts=[],  # TODO: 实现thoughts反向链接
+        todos=[],     # TODO: 实现todos反向链接
+        blocks=[]     # TODO: 实现blocks反向链接
+    )
 
 
 async def link_block_to_knowledge(
     knowledge_id: str, 
-    link_data: Dict[str, Any]
-) -> Optional[Dict[str, Any]]:
+    link_request: LinkBlockToKnowledgeRequest
+) -> Optional[LinkBlockToKnowledgeResponse]:
     """将block链接到知识文档"""
     knowledge = load_knowledge(knowledge_id)
     if not knowledge:
         return None
     
-    block_id = link_data.get("block_id")
-    if not block_id:
-        return None
-    
     # 验证 block 是否存在
-    block = await blocks_service.get_block(block_id)
+    block = await blocks_service.get_block(link_request.block_id)
     if not block:
         return None
     
@@ -275,18 +307,20 @@ async def link_block_to_knowledge(
     if not knowledge.linked_blocks:
         knowledge.linked_blocks = []
     
-    if block_id not in knowledge.linked_blocks:
-        position = link_data.get("position", len(knowledge.linked_blocks))
-        knowledge.linked_blocks.insert(position, block_id)
+    if link_request.block_id not in knowledge.linked_blocks:
+        if link_request.position is not None:
+            knowledge.linked_blocks.insert(link_request.position, link_request.block_id)
+        else:
+            knowledge.linked_blocks.append(link_request.block_id)
         knowledge.updated_at = datetime.now()
         save_knowledge(knowledge)
     
-    return {
-        "success": True,
-        "message": "Block linked successfully",
-        "linked_block_id": block_id,
-        "knowledge": knowledge.model_dump()
-    }
+    return LinkBlockToKnowledgeResponse(
+        success=True,
+        message="Block linked successfully",
+        linked_block_id=link_request.block_id,
+        knowledge=_knowledge_to_response(knowledge)
+    )
 
 
 async def _build_markdown_content(root_block) -> str:
@@ -314,7 +348,7 @@ async def _remove_backlinks(knowledge_id: str) -> None:
             save_knowledge(knowledge)
 
 
-async def search_knowledges(query: str) -> List[Dict[str, Any]]:
+async def search_knowledges(query: str) -> KnowledgeSearchResponse:
     """搜索知识文档"""
     all_knowledges = list_all_knowledges()
     results = []
@@ -337,11 +371,11 @@ async def search_knowledges(query: str) -> List[Dict[str, Any]]:
                 score += 3
         
         if score > 0:
-            results.append({
-                "knowledge": knowledge.model_dump(),
-                "score": score
-            })
+            results.append(KnowledgeSearchResultItem(
+                knowledge=_knowledge_to_response(knowledge),
+                score=score
+            ))
     
     # 按匹配分数排序
-    results.sort(key=lambda x: x["score"], reverse=True)
-    return results 
+    results.sort(key=lambda x: x.score, reverse=True)
+    return KnowledgeSearchResponse(results=results) 
