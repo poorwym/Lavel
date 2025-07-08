@@ -6,14 +6,26 @@ blocks采用双向链表结构，支持层级组织和位置调整
 """
 
 from fastapi import APIRouter, HTTPException, Query
-from typing import List, Optional, Dict, Any
+from typing import List, Optional
 
 from service.resources import blocks_service
+from schemas.resources.block import (
+    CreateBlockRequest,
+    UpdateBlockRequest,
+    ReplaceBlockRequest,
+    MoveBlockRequest,
+    BlockResponse,
+    BlockListResponse,
+    BlockChildrenResponse,
+    BlockSiblingsResponse,
+    MoveBlockResponse,
+    DeleteBlockResponse
+)
 
 router = APIRouter()
 
 
-@router.get("/")
+@router.get("/", response_model=BlockListResponse)
 async def list_blocks(
     page: int = Query(1, ge=1, description="页码"),
     limit: int = Query(20, ge=1, le=100, description="每页数量"),
@@ -33,22 +45,21 @@ async def list_blocks(
     return await blocks_service.list_blocks(page, limit, parent_id, tags)
 
 
-@router.post("/")
-async def create_block(block_data: Dict[str, Any]):
+@router.post("/", response_model=BlockResponse)
+async def create_block(block_request: CreateBlockRequest):
     """
     创建新的block
     
     Args:
-        block_data: 包含block内容、类型、父块ID等信息的字典
+        block_request: 创建block的请求数据
         
     Returns:
         创建的block信息，包括生成的ID和时间戳
     """
-    block = await blocks_service.create_block(block_data)
-    return block.model_dump()
+    return await blocks_service.create_block(block_request)
 
 
-@router.get("/{block_id}")
+@router.get("/{block_id}", response_model=BlockResponse)
 async def get_block(block_id: str):
     """
     获取单个block的详细信息
@@ -65,11 +76,11 @@ async def get_block(block_id: str):
     block = await blocks_service.get_block(block_id)
     if not block:
         raise HTTPException(status_code=404, detail="Block not found")
-    return block.model_dump()
+    return block
 
 
-@router.patch("/{block_id}")
-async def update_block(block_id: str, update_data: Dict[str, Any]):
+@router.patch("/{block_id}", response_model=BlockResponse)
+async def update_block(block_id: str, update_request: UpdateBlockRequest):
     """
     部分更新block
     
@@ -77,7 +88,7 @@ async def update_block(block_id: str, update_data: Dict[str, Any]):
     
     Args:
         block_id: 要更新的block ID
-        update_data: 包含要更新字段的字典
+        update_request: 包含要更新字段的请求数据
         
     Returns:
         更新后的block信息
@@ -85,14 +96,14 @@ async def update_block(block_id: str, update_data: Dict[str, Any]):
     Raises:
         HTTPException: 当block不存在时返回404
     """
-    block = await blocks_service.update_block(block_id, update_data)
+    block = await blocks_service.update_block(block_id, update_request)
     if not block:
         raise HTTPException(status_code=404, detail="Block not found")
-    return block.model_dump()
+    return block
 
 
-@router.put("/{block_id}")
-async def replace_block(block_id: str, block_data: Dict[str, Any]):
+@router.put("/{block_id}", response_model=BlockResponse)
+async def replace_block(block_id: str, replace_request: ReplaceBlockRequest):
     """
     完全替换block
     
@@ -100,7 +111,7 @@ async def replace_block(block_id: str, block_data: Dict[str, Any]):
     
     Args:
         block_id: 要替换的block ID
-        block_data: 新的block数据
+        replace_request: 新的block数据
         
     Returns:
         替换后的block信息
@@ -108,13 +119,13 @@ async def replace_block(block_id: str, block_data: Dict[str, Any]):
     Raises:
         HTTPException: 当block不存在时返回404
     """
-    block = await blocks_service.replace_block(block_id, block_data)
+    block = await blocks_service.replace_block(block_id, replace_request)
     if not block:
         raise HTTPException(status_code=404, detail="Block not found")
-    return block.model_dump()
+    return block
 
 
-@router.delete("/{block_id}")
+@router.delete("/{block_id}", response_model=DeleteBlockResponse)
 async def delete_block(block_id: str):
     """
     删除block
@@ -135,10 +146,10 @@ async def delete_block(block_id: str):
     success = await blocks_service.delete_block(block_id)
     if not success:
         raise HTTPException(status_code=404, detail="Block not found")
-    return {"success": True, "message": "Block deleted successfully"}
+    return DeleteBlockResponse(success=True, message="Block deleted successfully")
 
 
-@router.get("/{block_id}/children")
+@router.get("/{block_id}/children", response_model=BlockChildrenResponse)
 async def get_block_children(block_id: str):
     """
     获取指定block的所有子块
@@ -159,11 +170,10 @@ async def get_block_children(block_id: str):
     if not parent_block:
         raise HTTPException(status_code=404, detail="Parent block not found")
     
-    children = await blocks_service.get_block_children(block_id)
-    return [child.model_dump() for child in children]
+    return await blocks_service.get_block_children(block_id)
 
 
-@router.get("/{block_id}/siblings")
+@router.get("/{block_id}/siblings", response_model=BlockSiblingsResponse)
 async def get_block_siblings(block_id: str):
     """
     获取指定block的所有兄弟块
@@ -184,14 +194,13 @@ async def get_block_siblings(block_id: str):
     if not block:
         raise HTTPException(status_code=404, detail="Block not found")
     
-    siblings = await blocks_service.get_block_siblings(block_id)
-    return [sibling.model_dump() for sibling in siblings]
+    return await blocks_service.get_block_siblings(block_id)
 
 
-@router.post("/{block_id}/move")
+@router.post("/{block_id}/move", response_model=MoveBlockResponse)
 async def move_block(
     block_id: str, 
-    move_data: Dict[str, Any]
+    move_request: MoveBlockRequest
 ):
     """
     移动block位置
@@ -200,10 +209,7 @@ async def move_block(
     
     Args:
         block_id: 要移动的block ID
-        move_data: 包含新的位置信息的字典
-                  - parent_id: 新的父块ID（可选）
-                  - prev_id: 新的前一个兄弟块ID（可选）
-                  - next_id: 新的后一个兄弟块ID（可选）
+        move_request: 包含新的位置信息的请求数据
                   
     Returns:
         移动操作的结果和更新后的block信息
@@ -211,7 +217,7 @@ async def move_block(
     Raises:
         HTTPException: 当block不存在或移动操作无效时返回错误
     """
-    result = await blocks_service.move_block(block_id, move_data)
+    result = await blocks_service.move_block(block_id, move_request)
     if not result:
         raise HTTPException(status_code=404, detail="Block not found or move operation failed")
     return result 

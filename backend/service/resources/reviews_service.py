@@ -130,19 +130,20 @@ async def create_review(review_data: Dict[str, Any]) -> Review:
     now = datetime.now()
     
     # 创建根 block
+    from schemas.resources.block import CreateBlockRequest
     content = f"# {review_data.get('title', 'Review')}\n\n"
     
-    root_block_data = {
-        "content": content,
-        "parent_id": None
-    }
-    root_block = await blocks_service.create_block(root_block_data)
+    root_block_request = CreateBlockRequest(
+        content=content,
+        parent_id=None
+    )
+    root_block = await blocks_service.create_block(root_block_request)
     
     review = Review(
         uuid=review_id,
         title=review_data.get("title", "Untitled Review"),
         created_at=now,
-        root_block_id=root_block.id,
+        root_block_id=root_block.id,  # root_block现在是BlockResponse对象
         tags=review_data.get("tags", []),
         summary=review_data.get("summary"),
     )

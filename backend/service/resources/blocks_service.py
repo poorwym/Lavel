@@ -12,7 +12,19 @@ from datetime import datetime
 from typing import List, Optional, Dict, Any, Tuple
 from pathlib import Path
 
-from schemas.resources.block import Block
+from schemas.resources.block import (
+    Block, 
+    CreateBlockRequest, 
+    UpdateBlockRequest, 
+    ReplaceBlockRequest, 
+    MoveBlockRequest,
+    BlockResponse,
+    BlockListResponse,
+    BlockChildrenResponse,
+    BlockSiblingsResponse,
+    MoveBlockResponse,
+    PaginationInfo
+)
 from utils.config import Config
 
 
@@ -64,12 +76,26 @@ def list_all_blocks() -> List[Block]:
     return blocks
 
 
+def _block_to_response(block: Block) -> BlockResponse:
+    """将Block模型转换为BlockResponse"""
+    return BlockResponse(
+        id=block.id,
+        content=block.content,
+        parent_id=block.parent_id,
+        prev_id=block.prev_id,
+        next_id=block.next_id,
+        first_child_id=block.first_child_id,
+        created_at=block.created_at,
+        updated_at=block.updated_at
+    )
+
+
 async def list_blocks(
     page: int = 1,
     limit: int = 20,
     parent_id: Optional[str] = None,
     tags: Optional[str] = None
-) -> Dict[str, Any]:
+) -> BlockListResponse:
     """列出 blocks，支持分页和筛选"""
     all_blocks = list_all_blocks()
     
@@ -84,79 +110,85 @@ async def list_blocks(
     end_idx = start_idx + limit
     paginated_blocks = filtered_blocks[start_idx:end_idx]
     
-    return {
-        "blocks": [block.model_dump() for block in paginated_blocks],
-        "pagination": {
-            "page": page,
-            "limit": limit,
-            "total": total,
-            "total_pages": (total + limit - 1) // limit
-        }
-    }
+    # 转换为响应模型
+    block_responses = [_block_to_response(block) for block in paginated_blocks]
+    pagination_info = PaginationInfo(
+        page=page,
+        limit=limit,
+        total=total,
+        total_pages=(total + limit - 1) // limit
+    )
+    
+    return BlockListResponse(
+        blocks=block_responses,
+        pagination=pagination_info
+    )
 
 
-async def create_block(block_data: Dict[str, Any]) -> Block:
+async def create_block(block_request: CreateBlockRequest) -> BlockResponse:
     """创建新的 block"""
     block_id = str(uuid.uuid4())
     now = datetime.now()
     
     block = Block(
         id=block_id,
-        content=block_data.get("content", ""),
-        parent_id=block_data.get("parent_id"),
-        prev_id=block_data.get("prev_id"),
-        next_id=block_data.get("next_id"),
-        first_child_id=block_data.get("first_child_id"),
+        content=block_request.content,
+        parent_id=block_request.parent_id,
+        prev_id=block_request.prev_id,
+        next_id=block_request.next_id,
+        first_child_id=block_request.first_child_id,
         created_at=now,
         updated_at=now
     )
     
     save_block(block)
-    return block
+    return _block_to_response(block)
 
 
-async def get_block(block_id: str) -> Optional[Block]:
+async def get_block(block_id: str) -> Optional[BlockResponse]:
     """获取单个 block"""
-    return load_block(block_id)
+    block = load_block(block_id)
+    if not block:
+        return None
+    return _block_to_response(block)
 
 
-async def update_block(block_id: str, update_data: Dict[str, Any]) -> Optional[Block]:
+async def update_block(block_id: str, update_request: UpdateBlockRequest) -> Optional[BlockResponse]:
     """部分更新 block"""
     block = load_block(block_id)
     if not block:
         return None
     
-    # 更新字段
-    if "content" in update_data:
-        block.content = update_data["content"]
-    if "parent_id" in update_data:
-        block.parent_id = update_data["parent_id"]
-    if "prev_id" in update_data:
-        block.prev_id = update_data["prev_id"]
-    if "next_id" in update_data:
-        block.next_id = update_data["next_id"]
-    if "first_child_id" in update_data:
-        block.first_child_id = update_data["first_child_id"]
+    # 更新字段（只更新非None的字段）
+    update_data = update_request.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(block, field, value)
     
     block.updated_at = datetime.now()
     save_block(block)
-    return block
+    return _block_to_response(block)
 
 
-async def replace_block(block_id: str, block_data: Dict[str, Any]) -> Optional[Block]:
+async def replace_block(block_id: str, replace_request: ReplaceBlockRequest) -> Optional[BlockResponse]:
     """完全替换 block"""
     existing_block = load_block(block_id)
     if not existing_block:
         return None
     
-    # 保留 ID 和创建时间
-    block_data["id"] = block_id
-    block_data["created_at"] = existing_block.created_at
-    block_data["updated_at"] = datetime.now()
+    # 创建新的block，保留ID和创建时间
+    new_block = Block(
+        id=block_id,
+        content=replace_request.content,
+        parent_id=replace_request.parent_id,
+        prev_id=replace_request.prev_id,
+        next_id=replace_request.next_id,
+        first_child_id=replace_request.first_child_id,
+        created_at=existing_block.created_at,
+        updated_at=datetime.now()
+    )
     
-    new_block = Block(**block_data)
     save_block(new_block)
-    return new_block
+    return _block_to_response(new_block)
 
 
 async def delete_block(block_id: str) -> bool:
@@ -186,7 +218,7 @@ async def delete_block(block_id: str) -> bool:
             save_block(next_block)
     
     # 更新子块的父级为当前块的父级
-    children = await get_block_children(block_id)
+    children = await get_block_children_internal(block_id)
     for child in children:
         child.parent_id = block.parent_id
         save_block(child)
@@ -196,8 +228,8 @@ async def delete_block(block_id: str) -> bool:
     return True
 
 
-async def get_block_children(block_id: str) -> List[Block]:
-    """获取 block 的所有子块"""
+async def get_block_children_internal(block_id: str) -> List[Block]:
+    """获取 block 的所有子块（内部使用，返回Block对象）"""
     all_blocks = list_all_blocks()
     children = [b for b in all_blocks if b.parent_id == block_id]
     
@@ -224,21 +256,29 @@ async def get_block_children(block_id: str) -> List[Block]:
     return ordered_children
 
 
-async def get_block_siblings(block_id: str) -> List[Block]:
+async def get_block_children(block_id: str) -> BlockChildrenResponse:
+    """获取 block 的所有子块"""
+    children = await get_block_children_internal(block_id)
+    children_responses = [_block_to_response(child) for child in children]
+    return BlockChildrenResponse(children=children_responses)
+
+
+async def get_block_siblings(block_id: str) -> BlockSiblingsResponse:
     """获取 block 的所有兄弟块"""
     block = load_block(block_id)
     if not block:
-        return []
+        return BlockSiblingsResponse(siblings=[])
     
     all_blocks = list_all_blocks()
     siblings = [b for b in all_blocks if b.parent_id == block.parent_id and b.id != block_id]
-    return siblings
+    siblings_responses = [_block_to_response(sibling) for sibling in siblings]
+    return BlockSiblingsResponse(siblings=siblings_responses)
 
 
 async def move_block(
     block_id: str, 
-    move_data: Dict[str, Any]
-) -> Optional[Dict[str, Any]]:
+    move_request: MoveBlockRequest
+) -> Optional[MoveBlockResponse]:
     """移动 block 位置"""
     block = load_block(block_id)
     if not block:
@@ -248,13 +288,9 @@ async def move_block(
     await _remove_from_current_position(block)
     
     # 更新新位置信息
-    new_parent_id = move_data.get("parent_id", block.parent_id)
-    new_prev_id = move_data.get("prev_id")
-    new_next_id = move_data.get("next_id")
-    
-    block.parent_id = new_parent_id
-    block.prev_id = new_prev_id
-    block.next_id = new_next_id
+    block.parent_id = move_request.parent_id if move_request.parent_id is not None else block.parent_id
+    block.prev_id = move_request.prev_id
+    block.next_id = move_request.next_id
     
     # 插入到新位置
     await _insert_to_new_position(block)
@@ -262,11 +298,11 @@ async def move_block(
     block.updated_at = datetime.now()
     save_block(block)
     
-    return {
-        "success": True,
-        "block": block.model_dump(),
-        "message": "Block moved successfully"
-    }
+    return MoveBlockResponse(
+        success=True,
+        block=_block_to_response(block),
+        message="Block moved successfully"
+    )
 
 
 async def _remove_from_current_position(block: Block) -> None:

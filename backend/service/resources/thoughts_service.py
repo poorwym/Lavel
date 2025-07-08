@@ -139,21 +139,22 @@ async def create_thought(thought_data: Dict[str, Any]) -> Thought:
     now = datetime.now()
     
     # 创建根 block
+    from schemas.resources.block import CreateBlockRequest
     # 如果提供了summary，使用summary；否则使用默认内容
     summary = thought_data.get("summary", "Untitled Thought")
     content = f"# {summary}\n\n"
     
-    root_block_data = {
-        "content": content,
-        "parent_id": None
-    }
-    root_block = await blocks_service.create_block(root_block_data)
+    root_block_request = CreateBlockRequest(
+        content=content,
+        parent_id=None
+    )
+    root_block = await blocks_service.create_block(root_block_request)
     
     thought = Thought(
         uuid=thought_id,
         summary=summary,
         tags=thought_data.get("tags", []),
-        root_block_id=root_block.id,
+        root_block_id=root_block.id,  # root_block现在是BlockResponse对象
         created_at=now,
         updated_at=now
     )
@@ -218,7 +219,7 @@ async def upgrade_thought_to_knowledge(
         "title": knowledge_data.get("title", thought.summary or "Untitled"),
         "description": knowledge_data.get("description", "Upgraded from thought"),
         "tags": knowledge_data.get("additional_tags", thought.tags),
-        "content": root_block.content if root_block else ""
+        "content": root_block.content if root_block else ""  # root_block现在是BlockResponse对象
     }
     
     # 创建知识文档
@@ -254,7 +255,7 @@ async def search_thoughts(query: str) -> List[Dict[str, Any]]:
         
         # 内容匹配（需要读取 block 内容）
         root_block = await blocks_service.get_block(thought.root_block_id)
-        if root_block and query_lower in root_block.content.lower():
+        if root_block and query_lower in root_block.content.lower():  # root_block现在是BlockResponse对象
             score += 8
         
         if score > 0:

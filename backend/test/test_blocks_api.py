@@ -269,9 +269,13 @@ class TestBlocksAPI:
         response = client.get(f"/api/resources/blocks/{parent_id}/children")
         data = helper.assert_success_response(response)
         
-        assert isinstance(data, list)
+        # 现在返回的是包装对象，包含children字段
+        assert isinstance(data, dict)
+        assert "children" in data
+        assert isinstance(data["children"], list)
+        
         # 验证返回的都是子块
-        for child in data:
+        for child in data["children"]:
             assert_block_structure(child)
             assert child["parent_id"] == parent_id
     
@@ -295,9 +299,13 @@ class TestBlocksAPI:
         response = client.get(f"/api/resources/blocks/{test_block_id}/siblings")
         data = helper.assert_success_response(response)
         
-        assert isinstance(data, list)
+        # 现在返回的是包装对象，包含siblings字段
+        assert isinstance(data, dict)
+        assert "siblings" in data
+        assert isinstance(data["siblings"], list)
+        
         # 验证返回的都是兄弟块（相同父级，不包括自己）
-        for sibling in data:
+        for sibling in data["siblings"]:
             assert_block_structure(sibling)
             assert sibling["id"] != test_block_id
     

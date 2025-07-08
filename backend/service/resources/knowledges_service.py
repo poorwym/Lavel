@@ -116,18 +116,19 @@ async def create_knowledge(knowledge_data: Dict[str, Any]) -> Knowledge:
     now = datetime.now()
     
     # 创建根 block
-    root_block_data = {
-        "content": knowledge_data.get("content", f"# {knowledge_data.get('title', 'Untitled')}\n\n"),
-        "parent_id": None
-    }
-    root_block = await blocks_service.create_block(root_block_data)
+    from schemas.resources.block import CreateBlockRequest
+    root_block_request = CreateBlockRequest(
+        content=knowledge_data.get("content", f"# {knowledge_data.get('title', 'Untitled')}\n\n"),
+        parent_id=None
+    )
+    root_block = await blocks_service.create_block(root_block_request)
     
     knowledge = Knowledge(
         uuid=knowledge_id,
         title=knowledge_data.get("title", "Untitled"),
         description=knowledge_data.get("description", ""),
         tags=knowledge_data.get("tags", []),
-        root_block_id=root_block.id,
+        root_block_id=root_block.id,  # root_block现在是BlockResponse对象
         created_at=now,
         updated_at=now,
         linked_blocks=knowledge_data.get("linked_blocks", []),
@@ -290,11 +291,14 @@ async def link_block_to_knowledge(
 
 async def _build_markdown_content(root_block) -> str:
     """递归构建 Markdown 内容"""
+    # root_block 现在是 BlockResponse 对象
     content = [root_block.content]
     
     # 获取子 blocks
-    children = await blocks_service.get_block_children(root_block.id)
-    for child in children:
+    children_response = await blocks_service.get_block_children(root_block.id)
+    # children_response 现在是 BlockChildrenResponse 对象，包含 children 字段
+    for child in children_response.children:
+        # child 现在是 BlockResponse 对象
         child_content = await _build_markdown_content(child)
         content.append(child_content)
     

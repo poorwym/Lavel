@@ -136,12 +136,13 @@ async def create_todo(todo_data: Dict[str, Any]) -> Todo:
     now = datetime.now()
     
     # 创建根 block
+    from schemas.resources.block import CreateBlockRequest
     content = f"# {todo_data.get('title', 'Untitled Task')}\n\n{todo_data.get('description', '')}"
-    root_block_data = {
-        "content": content,
-        "parent_id": None
-    }
-    root_block = await blocks_service.create_block(root_block_data)
+    root_block_request = CreateBlockRequest(
+        content=content,
+        parent_id=None
+    )
+    root_block = await blocks_service.create_block(root_block_request)
     
     # 处理截止日期
     due_at = None
@@ -156,7 +157,7 @@ async def create_todo(todo_data: Dict[str, Any]) -> Todo:
         title=todo_data.get("title", "Untitled Task"),
         description=todo_data.get("description"),
         tags=todo_data.get("tags", []),
-        root_block_id=root_block.id,
+        root_block_id=root_block.id,  # root_block现在是BlockResponse对象
         status="pending",
         created_at=now,
         due_at=due_at,
