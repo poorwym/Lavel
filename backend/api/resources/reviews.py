@@ -6,14 +6,21 @@ Reviews API 模块
 """
 
 from fastapi import APIRouter, HTTPException, Query
-from typing import List, Optional, Dict, Any
+from typing import Optional
 
 from service.resources import reviews_service
+from schemas.resources.review import (
+    CreateReviewRequest,
+    UpdateReviewMetadataRequest,
+    ReviewResponse,
+    ReviewListResponse,
+    DeleteReviewResponse
+)
 
 router = APIRouter()
 
 
-@router.get("/")
+@router.get("/", response_model=ReviewListResponse)
 async def list_reviews(
     page: int = Query(1, ge=1, description="页码"),
     limit: int = Query(20, ge=1, le=100, description="每页数量"),
@@ -39,20 +46,15 @@ async def list_reviews(
     return await reviews_service.list_reviews(page, limit, tags, date_from, date_to)
 
 
-@router.post("/")
-async def create_review(review_data: Dict[str, Any]):
+@router.post("/", response_model=ReviewResponse)
+async def create_review(review_request: CreateReviewRequest):
     """
     创建新的review
     
     创建一个回顾文档，可以是定期回顾或特定主题的总结
     
     Args:
-        review_data: 包含回顾信息的字典
-                    - title: 回顾标题（必需）
-                    - tags: 标签列表（可选）
-                    - template_id: 使用的模板ID（可选）
-                    - auto_collect: 是否自动收集相关内容（默认true）
-                    - scope: 回顾范围配置（可选）
+        review_request: 创建回顾的请求数据
                     
     Returns:
         创建的回顾信息，包括：
@@ -60,11 +62,10 @@ async def create_review(review_data: Dict[str, Any]):
         - 如果启用自动收集，返回收集到的相关内容
         - 建议的回顾要点
     """
-    review = await reviews_service.create_review(review_data)
-    return review.model_dump()
+    return await reviews_service.create_review(review_request)
 
 
-@router.get("/{review_id}")
+@router.get("/{review_id}", response_model=ReviewResponse)
 async def get_review(review_id: str):
     """
     获取review的详细信息
@@ -87,11 +88,11 @@ async def get_review(review_id: str):
     review = await reviews_service.get_review(review_id)
     if not review:
         raise HTTPException(status_code=404, detail="Review not found")
-    return review.model_dump()
+    return review
 
 
-@router.patch("/{review_id}")
-async def update_review_metadata(review_id: str, update_data: Dict[str, Any]):
+@router.patch("/{review_id}", response_model=ReviewResponse)
+async def update_review_metadata(review_id: str, update_request: UpdateReviewMetadataRequest):
     """
     更新review的元数据
     
@@ -99,10 +100,7 @@ async def update_review_metadata(review_id: str, update_data: Dict[str, Any]):
     
     Args:
         review_id: 要更新的回顾ID
-        update_data: 包含要更新字段的字典
-                    - title: 新标题（可选）
-                    - tags: 新标签列表（可选）
-                    - summary: 回顾摘要（可选）
+        update_request: 包含要更新字段的请求数据
                     
     Returns:
         更新后的回顾元数据
@@ -110,13 +108,13 @@ async def update_review_metadata(review_id: str, update_data: Dict[str, Any]):
     Raises:
         HTTPException: 当回顾不存在时返回404
     """
-    review = await reviews_service.update_review_metadata(review_id, update_data)
+    review = await reviews_service.update_review_metadata(review_id, update_request)
     if not review:
         raise HTTPException(status_code=404, detail="Review not found")
-    return review.model_dump()
+    return review
 
 
-@router.delete("/{review_id}")
+@router.delete("/{review_id}", response_model=DeleteReviewResponse)
 async def delete_review(review_id: str):
     """
     删除review
@@ -135,4 +133,4 @@ async def delete_review(review_id: str):
     success = await reviews_service.delete_review(review_id)
     if not success:
         raise HTTPException(status_code=404, detail="Review not found")
-    return {"success": True, "message": "Review deleted successfully"}
+    return DeleteReviewResponse(success=True, message="Review deleted successfully")

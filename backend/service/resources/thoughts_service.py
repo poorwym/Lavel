@@ -12,7 +12,19 @@ from datetime import datetime, date
 from typing import List, Optional, Dict, Any
 from pathlib import Path
 
-from schemas.resources.thought import Thought
+from schemas.resources.thought import (
+    Thought,
+    CreateThoughtRequest,
+    UpdateThoughtRequest,
+    UpgradeThoughtToKnowledgeRequest,
+    ThoughtResponse,
+    ThoughtListResponse,
+    DeleteThoughtResponse,
+    ThoughtSearchResponse,
+    ThoughtSearchResultItem,
+    UpgradeThoughtToKnowledgeResponse,
+    PaginationInfo
+)
 from utils.config import Config
 from . import blocks_service
 
@@ -65,6 +77,18 @@ def list_all_thoughts() -> List[Thought]:
     return thoughts
 
 
+def _thought_to_response(thought: Thought) -> ThoughtResponse:
+    """将Thought模型转换为ThoughtResponse"""
+    return ThoughtResponse(
+        uuid=thought.uuid,
+        summary=thought.summary,
+        tags=thought.tags,
+        root_block_id=thought.root_block_id,
+        created_at=thought.created_at,
+        updated_at=thought.updated_at
+    )
+
+
 async def list_thoughts(
     page: int = 1,
     limit: int = 20,
@@ -72,7 +96,7 @@ async def list_thoughts(
     search: Optional[str] = None,
     date_from: Optional[str] = None,
     date_to: Optional[str] = None
-) -> Dict[str, Any]:
+) -> ThoughtListResponse:
     """列出思考笔记，支持分页、标签筛选、搜索和日期范围筛选"""
     all_thoughts = list_all_thoughts()
     
@@ -122,18 +146,22 @@ async def list_thoughts(
     end_idx = start_idx + limit
     paginated_thoughts = all_thoughts[start_idx:end_idx]
     
-    return {
-        "thoughts": [thought.model_dump() for thought in paginated_thoughts],
-        "pagination": {
-            "page": page,
-            "limit": limit,
-            "total": total,
-            "total_pages": (total + limit - 1) // limit
-        }
-    }
+    # 转换为响应模型
+    thought_responses = [_thought_to_response(thought) for thought in paginated_thoughts]
+    pagination_info = PaginationInfo(
+        page=page,
+        limit=limit,
+        total=total,
+        total_pages=(total + limit - 1) // limit
+    )
+    
+    return ThoughtListResponse(
+        thoughts=thought_responses,
+        pagination=pagination_info
+    )
 
 
-async def create_thought(thought_data: Dict[str, Any]) -> Thought:
+async def create_thought(thought_request: CreateThoughtRequest) -> ThoughtResponse:
     """创建新的思考笔记"""
     thought_id = str(uuid.uuid4())
     now = datetime.now()
@@ -141,7 +169,7 @@ async def create_thought(thought_data: Dict[str, Any]) -> Thought:
     # 创建根 block
     from schemas.resources.block import CreateBlockRequest
     # 如果提供了summary，使用summary；否则使用默认内容
-    summary = thought_data.get("summary", "Untitled Thought")
+    summary = thought_request.summary or "Untitled Thought"
     content = f"# {summary}\n\n"
     
     root_block_request = CreateBlockRequest(
@@ -153,36 +181,38 @@ async def create_thought(thought_data: Dict[str, Any]) -> Thought:
     thought = Thought(
         uuid=thought_id,
         summary=summary,
-        tags=thought_data.get("tags", []),
+        tags=thought_request.tags,
         root_block_id=root_block.id,  # root_block现在是BlockResponse对象
         created_at=now,
         updated_at=now
     )
     
     save_thought(thought)
-    return thought
+    return _thought_to_response(thought)
 
 
-async def get_thought(thought_id: str) -> Optional[Thought]:
+async def get_thought(thought_id: str) -> Optional[ThoughtResponse]:
     """获取思考笔记详情"""
-    return load_thought(thought_id)
+    thought = load_thought(thought_id)
+    if not thought:
+        return None
+    return _thought_to_response(thought)
 
 
-async def update_thought(thought_id: str, update_data: Dict[str, Any]) -> Optional[Thought]:
+async def update_thought(thought_id: str, update_request: UpdateThoughtRequest) -> Optional[ThoughtResponse]:
     """更新思考笔记"""
     thought = load_thought(thought_id)
     if not thought:
         return None
     
-    # 更新字段
-    if "summary" in update_data:
-        thought.summary = update_data["summary"]
-    if "tags" in update_data:
-        thought.tags = update_data["tags"]
+    # 更新字段（只更新非None的字段）
+    update_data = update_request.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(thought, field, value)
     
     thought.updated_at = datetime.now()
     save_thought(thought)
-    return thought
+    return _thought_to_response(thought)
 
 
 async def delete_thought(thought_id: str) -> bool:
@@ -201,8 +231,8 @@ async def delete_thought(thought_id: str) -> bool:
 
 async def upgrade_thought_to_knowledge(
     thought_id: str, 
-    knowledge_data: Optional[Dict[str, Any]] = None
-) -> Optional[Dict[str, Any]]:
+    knowledge_request: Optional[UpgradeThoughtToKnowledgeRequest] = None
+) -> Optional[UpgradeThoughtToKnowledgeResponse]:
     """将思考笔记升级为知识文档"""
     thought = load_thought(thought_id)
     if not thought:
@@ -210,32 +240,33 @@ async def upgrade_thought_to_knowledge(
     
     # 导入 knowledges_service（避免循环导入）
     from . import knowledges_service
+    from schemas.resources.knowledge import CreateKnowledgeRequest
     
     # 准备知识文档数据
-    knowledge_data = knowledge_data or {}
+    knowledge_request = knowledge_request or UpgradeThoughtToKnowledgeRequest()
     root_block = await blocks_service.get_block(thought.root_block_id)
     
-    new_knowledge_data = {
-        "title": knowledge_data.get("title", thought.summary or "Untitled"),
-        "description": knowledge_data.get("description", "Upgraded from thought"),
-        "tags": knowledge_data.get("additional_tags", thought.tags),
-        "content": root_block.content if root_block else ""  # root_block现在是BlockResponse对象
-    }
+    new_knowledge_request = CreateKnowledgeRequest(
+        title=knowledge_request.title or thought.summary or "Untitled",
+        description=knowledge_request.description or "Upgraded from thought",
+        tags=knowledge_request.additional_tags or thought.tags,
+        content=root_block.content if root_block else ""  # root_block现在是BlockResponse对象
+    )
     
     # 创建知识文档
-    knowledge = await knowledges_service.create_knowledge(new_knowledge_data)
+    knowledge = await knowledges_service.create_knowledge(new_knowledge_request)
     
     # 删除原思考笔记
     await delete_thought(thought_id)
     
-    return {
-        "success": True,
-        "knowledge": knowledge.model_dump(),
-        "message": "Thought upgraded to knowledge successfully"
-    }
+    return UpgradeThoughtToKnowledgeResponse(
+        success=True,
+        knowledge=knowledge.model_dump(),
+        message="Thought upgraded to knowledge successfully"
+    )
 
 
-async def search_thoughts(query: str) -> List[Dict[str, Any]]:
+async def search_thoughts(query: str) -> ThoughtSearchResponse:
     """搜索思考笔记"""
     all_thoughts = list_all_thoughts()
     results = []
@@ -259,11 +290,11 @@ async def search_thoughts(query: str) -> List[Dict[str, Any]]:
             score += 8
         
         if score > 0:
-            results.append({
-                "thought": thought.model_dump(),
-                "score": score
-            })
+            results.append(ThoughtSearchResultItem(
+                thought=_thought_to_response(thought),
+                score=score
+            ))
     
     # 按匹配分数排序
-    results.sort(key=lambda x: x["score"], reverse=True)
-    return results
+    results.sort(key=lambda x: x.score, reverse=True)
+    return ThoughtSearchResponse(results=results)

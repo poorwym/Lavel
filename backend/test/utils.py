@@ -49,20 +49,27 @@ class MockLLMService:
     @staticmethod
     def mock_auto_expand_subtasks(todo_title: str, todo_description: str = "") -> List[Dict[str, Any]]:
         """模拟自动展开子任务"""
+        now = datetime.now().isoformat()
         return [
             {
-                "id": str(uuid.uuid4()),
-                "title": f"{todo_title} - 子任务1",
-                "description": "自动生成的子任务1",
+                "uuid": str(uuid.uuid4()),
+                "content": f"{todo_title} - 子任务1",
                 "status": "pending",
-                "dependencies": []
+                "depends_on": [],
+                "tags": [],
+                "root_block_id": str(uuid.uuid4()),
+                "created_at": now,
+                "updated_at": now
             },
             {
-                "id": str(uuid.uuid4()),
-                "title": f"{todo_title} - 子任务2", 
-                "description": "自动生成的子任务2",
+                "uuid": str(uuid.uuid4()),
+                "content": f"{todo_title} - 子任务2", 
                 "status": "pending",
-                "dependencies": []
+                "depends_on": [],
+                "tags": [],
+                "root_block_id": str(uuid.uuid4()),
+                "created_at": now,
+                "updated_at": now
             }
         ]
     

@@ -109,7 +109,10 @@ class TestTodosAPI:
             "created_at": "2024-01-01T12:00:00",
             "updated_at": "2024-01-01T12:00:00",
             "subtasks": [],
-            "dependencies": []
+            "dependencies": [],
+            "root_block_id": "test-block-id",
+            "linked_knowledge": [],
+            "due_at": None
         })
         
         mock_create.return_value = type('MockTodo', (), mock_todo_data)()
@@ -144,7 +147,10 @@ class TestTodosAPI:
             "created_at": "2024-01-01T12:00:00",
             "updated_at": "2024-01-01T12:00:00",
             "subtasks": MockLLMService.mock_auto_expand_subtasks("复杂项目任务"),
-            "dependencies": []
+            "dependencies": [],
+            "root_block_id": "test-block-id",
+            "linked_knowledge": [],
+            "due_at": None
         }
         
         mock_create.return_value = type('MockTodo', (), mock_todo_data)()

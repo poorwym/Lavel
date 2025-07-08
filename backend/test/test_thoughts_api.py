@@ -308,7 +308,7 @@ class TestThoughtsAPI:
         mock_upgrade.return_value = {
             "success": True,
             "knowledge": mock_knowledge_data,
-            "original_thought_id": thought_id
+            "message": "Thought upgraded to knowledge successfully"
         }
         
         # 升级thought
@@ -322,8 +322,8 @@ class TestThoughtsAPI:
         
         assert data["success"] is True
         assert "knowledge" in data
-        assert "original_thought_id" in data
-        assert data["original_thought_id"] == thought_id
+        assert "message" in data
+        assert data["message"] == "Thought upgraded to knowledge successfully"
     
     @patch('service.resources.thoughts_service.upgrade_thought_to_knowledge')
     def test_upgrade_thought_without_additional_data(self, mock_upgrade, client, temp_lavel_dir):
@@ -340,7 +340,7 @@ class TestThoughtsAPI:
         mock_upgrade.return_value = {
             "success": True,
             "knowledge": MockLLMService.mock_upgrade_thought_to_knowledge("简单想法内容", "简单想法"),
-            "original_thought_id": thought_id
+            "message": "Thought upgraded to knowledge successfully"
         }
         
         # 不提供额外数据进行升级

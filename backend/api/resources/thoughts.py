@@ -6,15 +6,24 @@ thoughts用于存放简短想法，支持升级为详细的knowledge文档
 """
 
 from fastapi import APIRouter, HTTPException, Query
-from typing import List, Optional, Dict, Any
-from datetime import date
+from typing import Optional
 
 from service.resources import thoughts_service
+from schemas.resources.thought import (
+    CreateThoughtRequest,
+    UpdateThoughtRequest,
+    UpgradeThoughtToKnowledgeRequest,
+    ThoughtResponse,
+    ThoughtListResponse,
+    DeleteThoughtResponse,
+    ThoughtSearchResponse,
+    UpgradeThoughtToKnowledgeResponse
+)
 
 router = APIRouter()
 
 
-@router.get("/")
+@router.get("/", response_model=ThoughtListResponse)
 async def list_thoughts(
     page: int = Query(1, ge=1, description="页码"),
     limit: int = Query(20, ge=1, le=100, description="每页数量"),
@@ -42,26 +51,23 @@ async def list_thoughts(
     return await thoughts_service.list_thoughts(page, limit, tags, search, date_from, date_to)
 
 
-@router.post("/")
-async def create_thought(thought_data: Dict[str, Any]):
+@router.post("/", response_model=ThoughtResponse)
+async def create_thought(thought_request: CreateThoughtRequest):
     """
     创建新的thought
     
     创建一个轻量级的思考笔记，适合记录简短的想法和灵感
     
     Args:
-        thought_data: 包含思考笔记信息的字典
-                     - summary: 思考内容概述（可选，如果不提供会自动生成）
-                     - tags: 标签列表（可选）
+        thought_request: 创建思考笔记的请求数据
                      
     Returns:
         创建的思考笔记信息，包括生成的ID和时间戳
     """
-    thought = await thoughts_service.create_thought(thought_data)
-    return thought.model_dump()
+    return await thoughts_service.create_thought(thought_request)
 
 
-@router.get("/search")
+@router.get("/search", response_model=ThoughtSearchResponse)
 async def search_thoughts(
     query: str = Query(..., description="搜索关键词")
 ):
@@ -74,11 +80,10 @@ async def search_thoughts(
     Returns:
         匹配的思考笔记列表
     """
-    results = await thoughts_service.search_thoughts(query)
-    return {"results": results}
+    return await thoughts_service.search_thoughts(query)
 
 
-@router.get("/{thought_id}")
+@router.get("/{thought_id}", response_model=ThoughtResponse)
 async def get_thought(thought_id: str):
     """
     获取单个thought的详细信息
@@ -101,11 +106,11 @@ async def get_thought(thought_id: str):
     thought = await thoughts_service.get_thought(thought_id)
     if not thought:
         raise HTTPException(status_code=404, detail="Thought not found")
-    return thought.model_dump()
+    return thought
 
 
-@router.patch("/{thought_id}")
-async def update_thought(thought_id: str, update_data: Dict[str, Any]):
+@router.patch("/{thought_id}", response_model=ThoughtResponse)
+async def update_thought(thought_id: str, update_request: UpdateThoughtRequest):
     """
     更新thought
     
@@ -113,9 +118,7 @@ async def update_thought(thought_id: str, update_data: Dict[str, Any]):
     
     Args:
         thought_id: 要更新的思考笔记ID
-        update_data: 包含要更新字段的字典
-                    - summary: 新概述（可选）
-                    - tags: 新标签列表（可选）
+        update_request: 包含要更新字段的请求数据
                     
     Returns:
         更新后的思考笔记信息
@@ -123,13 +126,13 @@ async def update_thought(thought_id: str, update_data: Dict[str, Any]):
     Raises:
         HTTPException: 当思考笔记不存在时返回404
     """
-    thought = await thoughts_service.update_thought(thought_id, update_data)
+    thought = await thoughts_service.update_thought(thought_id, update_request)
     if not thought:
         raise HTTPException(status_code=404, detail="Thought not found")
-    return thought.model_dump()
+    return thought
 
 
-@router.delete("/{thought_id}")
+@router.delete("/{thought_id}", response_model=DeleteThoughtResponse)
 async def delete_thought(thought_id: str):
     """
     删除thought
@@ -148,13 +151,13 @@ async def delete_thought(thought_id: str):
     success = await thoughts_service.delete_thought(thought_id)
     if not success:
         raise HTTPException(status_code=404, detail="Thought not found")
-    return {"success": True, "message": "Thought deleted successfully"}
+    return DeleteThoughtResponse(success=True, message="Thought deleted successfully")
 
 
-@router.post("/{thought_id}/upgrade")
+@router.post("/{thought_id}/upgrade", response_model=UpgradeThoughtToKnowledgeResponse)
 async def upgrade_thought_to_knowledge(
     thought_id: str,
-    knowledge_data: Optional[Dict[str, Any]] = None
+    knowledge_request: Optional[UpgradeThoughtToKnowledgeRequest] = None
 ):
     """
     将思考笔记升级为知识文档
@@ -163,10 +166,7 @@ async def upgrade_thought_to_knowledge(
     
     Args:
         thought_id: 要升级的思考笔记ID
-        knowledge_data: 知识文档的附加信息（可选）
-                       - title: 自定义标题（可选）
-                       - description: 描述（可选）
-                       - additional_tags: 附加标签（可选）
+        knowledge_request: 知识文档的附加信息（可选）
                        
     Returns:
         升级操作的结果，包括：
@@ -176,7 +176,7 @@ async def upgrade_thought_to_knowledge(
     Raises:
         HTTPException: 当思考笔记不存在时返回404
     """
-    result = await thoughts_service.upgrade_thought_to_knowledge(thought_id, knowledge_data)
+    result = await thoughts_service.upgrade_thought_to_knowledge(thought_id, knowledge_request)
     if not result:
         raise HTTPException(status_code=404, detail="Thought not found")
     return result

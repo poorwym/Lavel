@@ -12,7 +12,15 @@ from datetime import datetime
 from typing import List, Optional, Dict, Any
 from pathlib import Path
 
-from schemas.resources.review import Review
+from schemas.resources.review import (
+    Review,
+    CreateReviewRequest,
+    UpdateReviewMetadataRequest,
+    ReviewResponse,
+    ReviewListResponse,
+    DeleteReviewResponse,
+    PaginationInfo
+)
 from utils.config import Config
 from . import blocks_service
 
@@ -65,13 +73,26 @@ def list_all_reviews() -> List[Review]:
     return reviews
 
 
+def _review_to_response(review: Review) -> ReviewResponse:
+    """将Review模型转换为ReviewResponse"""
+    return ReviewResponse(
+        uuid=review.uuid,
+        title=review.title,
+        summary=review.summary,
+        tags=review.tags,
+        root_block_id=review.root_block_id,
+        created_at=review.created_at,
+        updated_at=review.updated_at
+    )
+
+
 async def list_reviews(
     page: int = 1,
     limit: int = 20,
     tags: Optional[str] = None,
     date_from: Optional[str] = None,
     date_to: Optional[str] = None
-) -> Dict[str, Any]:
+) -> ReviewListResponse:
     """列出所有reviews，支持多维度筛选和分页功能"""
     all_reviews = list_all_reviews()
     
@@ -113,25 +134,29 @@ async def list_reviews(
     end_idx = start_idx + limit
     paginated_reviews = all_reviews[start_idx:end_idx]
     
-    return {
-        "reviews": [review.model_dump() for review in paginated_reviews],
-        "pagination": {
-            "page": page,
-            "limit": limit,
-            "total": total,
-            "total_pages": (total + limit - 1) // limit
-        }
-    }
+    # 转换为响应模型
+    review_responses = [_review_to_response(review) for review in paginated_reviews]
+    pagination_info = PaginationInfo(
+        page=page,
+        limit=limit,
+        total=total,
+        total_pages=(total + limit - 1) // limit
+    )
+    
+    return ReviewListResponse(
+        reviews=review_responses,
+        pagination=pagination_info
+    )
 
 
-async def create_review(review_data: Dict[str, Any]) -> Review:
+async def create_review(review_request: CreateReviewRequest) -> ReviewResponse:
     """创建新的review"""
     review_id = str(uuid.uuid4())
     now = datetime.now()
     
     # 创建根 block
     from schemas.resources.block import CreateBlockRequest
-    content = f"# {review_data.get('title', 'Review')}\n\n"
+    content = f"# {review_request.title}\n\n"
     
     root_block_request = CreateBlockRequest(
         content=content,
@@ -141,38 +166,38 @@ async def create_review(review_data: Dict[str, Any]) -> Review:
     
     review = Review(
         uuid=review_id,
-        title=review_data.get("title", "Untitled Review"),
+        title=review_request.title,
         created_at=now,
         root_block_id=root_block.id,  # root_block现在是BlockResponse对象
-        tags=review_data.get("tags", []),
-        summary=review_data.get("summary"),
+        tags=review_request.tags,
+        summary=review_request.summary,
     )
     
     save_review(review)
-    return review
+    return _review_to_response(review)
 
 
-async def get_review(review_id: str) -> Optional[Review]:
+async def get_review(review_id: str) -> Optional[ReviewResponse]:
     """获取review的详细信息"""
-    return load_review(review_id)
+    review = load_review(review_id)
+    if not review:
+        return None
+    return _review_to_response(review)
 
 
-async def update_review_metadata(review_id: str, update_data: Dict[str, Any]) -> Optional[Review]:
+async def update_review_metadata(review_id: str, update_request: UpdateReviewMetadataRequest) -> Optional[ReviewResponse]:
     """更新review的元数据"""
     review = load_review(review_id)
     if not review:
         return None
     
-    # 更新字段
-    if "title" in update_data:
-        review.title = update_data["title"]
-    if "tags" in update_data:
-        review.tags = update_data["tags"]
-    if "summary" in update_data:
-        review.summary = update_data["summary"]
+    # 更新字段（只更新非None的字段）
+    update_data = update_request.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(review, field, value)
     
     save_review(review)
-    return review
+    return _review_to_response(review)
 
 
 async def delete_review(review_id: str) -> bool:
