@@ -92,6 +92,8 @@ importers:
         specifier: 5.8.2
         version: 5.8.2
 
+  backend: {}
+
   packages/eslint-config:
     devDependencies:
       '@eslint/js':

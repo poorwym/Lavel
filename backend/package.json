@@ -1,0 +1,11 @@
+{
+  "name": "@lavel/backend",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "source ./.venv/bin/activate && uvicorn main:app --reload",
+    "build": "source ./.venv/bin/activate && pyinstaller build.py"
+  },
+  "devDependencies": {}
+}
