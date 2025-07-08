@@ -1,0 +1,77 @@
+{
+  "name": "desktop",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -n VITE,ELECTRON -c cyan,magenta \"vite\" \"pnpm run electron:dev\"",
+    "electron:dev": "tsc -p electron && mv out/main.js out/main.cjs && mv out/preload.js out/preload.cjs && wait-on http://localhost:5173 && electron ./out/main.cjs",
+    "build": "tsc -b && vite build && tsc -p electron && mv out/main.js out/main.cjs && mv out/preload.js out/preload.cjs",
+    "start": "electron ./out/main.cjs",
+    "electron:build": "tsc -p electron && mv out/main.js out/main.cjs && mv out/preload.js out/preload.cjs",
+    "package": "electron-builder",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.30.1",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "@vitejs/plugin-react-swc": "^3.10.2",
+    "concurrently": "^9.2.0",
+    "electron": "^37.2.0",
+    "electron-builder": "^26.0.12",
+    "electron-reload": "2.0.0-alpha.1",
+    "eslint": "^9.30.1",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.20",
+    "globals": "^16.3.0",
+    "typescript": "~5.8.3",
+    "typescript-eslint": "^8.35.1",
+    "vite": "^7.0.3",
+    "wait-on": "^8.0.3"
+  },
+  "main": "out/main.cjs",
+  "build": {
+    "appId": "com.lavel.desktop",
+    "productName": "Lavel Desktop",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "out/**/*",
+      "node_modules/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        }
+      ]
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ]
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": ["x64"]
+        }
+      ]
+    }
+  }
+}
+ 
