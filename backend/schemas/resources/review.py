@@ -32,7 +32,7 @@ class UpdateReviewMetadataRequest(BaseModel):
 # Response Models
 class ReviewResponse(BaseModel):
     """单个review的响应模型"""
-    uuid: str = Field(..., description="唯一标识")
+    id: str = Field(..., description="唯一标识")
     title: str = Field(..., description="复盘标题")
     summary: Optional[str] = Field(None, description="复盘摘要")
     tags: List[str] = Field(..., description="标签列表")

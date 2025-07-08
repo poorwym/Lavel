@@ -52,7 +52,7 @@ class MockLLMService:
         now = datetime.now().isoformat()
         return [
             {
-                "uuid": str(uuid.uuid4()),
+                "id": str(uuid.uuid4()),
                 "content": f"{todo_title} - 子任务1",
                 "status": "pending",
                 "depends_on": [],
@@ -62,7 +62,7 @@ class MockLLMService:
                 "updated_at": now
             },
             {
-                "uuid": str(uuid.uuid4()),
+                "id": str(uuid.uuid4()),
                 "content": f"{todo_title} - 子任务2", 
                 "status": "pending",
                 "depends_on": [],
@@ -219,7 +219,7 @@ def assert_block_structure(block_data: Dict[str, Any]):
 
 def assert_knowledge_structure(knowledge_data: Dict[str, Any]):
     """断言 knowledge 数据结构正确"""
-    required_fields = ["uuid", "title", "description", "tags", "root_block_id", "created_at", "updated_at"]
+    required_fields = ["id", "title", "description", "tags", "root_block_id", "created_at", "updated_at"]
     for field in required_fields:
         assert field in knowledge_data, f"Missing required field: {field}"
     
@@ -230,14 +230,14 @@ def assert_knowledge_structure(knowledge_data: Dict[str, Any]):
 
 def assert_thought_structure(thought_data: Dict[str, Any]):
     """断言 thought 数据结构正确"""
-    required_fields = ["uuid", "summary", "tags", "root_block_id", "created_at", "updated_at"]
+    required_fields = ["id", "summary", "tags", "root_block_id", "created_at", "updated_at"]
     for field in required_fields:
         assert field in thought_data, f"Missing required field: {field}"
 
 
 def assert_todo_structure(todo_data: Dict[str, Any]):
     """断言 todo 数据结构正确"""
-    required_fields = ["uuid", "title", "status", "created_at", "updated_at"]
+    required_fields = ["id", "title", "status", "created_at", "updated_at"]
     for field in required_fields:
         assert field in todo_data, f"Missing required field: {field}"
     
@@ -249,6 +249,6 @@ def assert_todo_structure(todo_data: Dict[str, Any]):
 
 def assert_review_structure(review_data: Dict[str, Any]):
     """断言 review 数据结构正确"""
-    required_fields = ["uuid", "title", "created_at", "updated_at", "root_block_id"]
+    required_fields = ["id", "title", "created_at", "updated_at", "root_block_id"]
     for field in required_fields:
         assert field in review_data, f"Missing required field: {field}" 

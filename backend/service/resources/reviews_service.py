@@ -45,7 +45,7 @@ def load_review(review_id: str) -> Optional[Review]:
 
 def save_review(review: Review) -> None:
     """保存 review 到文件"""
-    review_file = get_reviews_dir() / f"{review.uuid}.json"
+    review_file = get_reviews_dir() / f"{review.id}.json"
     with open(review_file, 'w', encoding='utf-8') as f:
         json.dump(review.model_dump(mode='json'), f, ensure_ascii=False, indent=2)
 
@@ -76,7 +76,7 @@ def list_all_reviews() -> List[Review]:
 def _review_to_response(review: Review) -> ReviewResponse:
     """将Review模型转换为ReviewResponse"""
     return ReviewResponse(
-        uuid=review.uuid,
+        id=review.id,
         title=review.title,
         summary=review.summary,
         tags=review.tags,
@@ -165,7 +165,7 @@ async def create_review(review_request: CreateReviewRequest) -> ReviewResponse:
     root_block = await blocks_service.create_block(root_block_request)
     
     review = Review(
-        uuid=review_id,
+        id=review_id,
         title=review_request.title,
         created_at=now,
         root_block_id=root_block.id,  # root_block现在是BlockResponse对象

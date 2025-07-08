@@ -6,7 +6,7 @@ from datetime import datetime
 class LavelResource(BaseModel):
     """基础模型"""
     
-    uuid: str = Field(..., description="唯一标识")
+    id: str = Field(..., description="唯一标识")
     created_at: datetime = Field(default_factory=datetime.now, description="创建时间")
     updated_at: datetime = Field(default_factory=datetime.now, description="更新时间")
     tags: List[str] = Field(default_factory=list, description="标签列表")

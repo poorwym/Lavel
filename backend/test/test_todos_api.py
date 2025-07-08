@@ -104,7 +104,7 @@ class TestTodosAPI:
         # 模拟服务返回
         mock_todo_data = sample_todo_data.copy()
         mock_todo_data.update({
-            "uuid": "test-todo-id",
+            "id": "test-todo-id",
             "status": "pending",
             "created_at": "2024-01-01T12:00:00",
             "updated_at": "2024-01-01T12:00:00",
@@ -139,7 +139,7 @@ class TestTodosAPI:
         
         # 模拟服务返回包含子任务的数据
         mock_todo_data = {
-            "uuid": "test-todo-id", 
+            "id": "test-todo-id", 
             "title": "复杂项目任务",
             "description": "这是一个需要展开为多个子任务的复杂项目",
             "status": "pending",
@@ -173,7 +173,7 @@ class TestTodosAPI:
         data = helper.assert_success_response(response)
         
         assert_todo_structure(data)
-        assert data["uuid"] == todo_id
+        assert data["id"] == todo_id
     
     def test_get_todo_not_found(self, client, temp_lavel_dir):
         """测试获取不存在的 todo"""
@@ -253,8 +253,8 @@ class TestTodosAPI:
         todo_id = create_test_todo(temp_lavel_dir, {
             "title": "父任务",
             "subtasks": [
-                {"uuid": "sub1", "title": "子任务1", "status": "pending"},
-                {"uuid": "sub2", "title": "子任务2", "status": "done"}
+                {"id": "sub1", "title": "子任务1", "status": "pending"},
+                {"id": "sub2", "title": "子任务2", "status": "done"}
             ]
         })
         

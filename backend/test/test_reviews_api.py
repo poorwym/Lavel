@@ -100,7 +100,7 @@ class TestReviewsAPI:
         # 模拟服务返回
         mock_review_data = sample_review_data.copy()
         mock_review_data.update({
-            "uuid": "test-review-id",
+            "id": "test-review-id",
             "created_at": "2024-01-01T12:00:00",
             "updated_at": "2024-01-01T12:00:00",
             "root_block_id": "test-root-block-id"
@@ -128,7 +128,7 @@ class TestReviewsAPI:
         
         # 模拟服务返回包含自动收集内容的数据
         mock_review_data = {
-            "uuid": "test-review-id",
+            "id": "test-review-id",
             "title": "自动收集的周回顾",
             "tags": [],
             "created_at": "2024-01-01T12:00:00",
@@ -158,7 +158,7 @@ class TestReviewsAPI:
         
         assert data["title"] == "最小回顾"
         assert "tags" in data   # 应该有默认值
-        assert "uuid" in data   # 应该有生成的UUID
+        assert "id" in data   # 应该有生成的ID
     
     def test_get_review_success(self, client, temp_lavel_dir):
         """测试成功获取 review"""
@@ -171,7 +171,7 @@ class TestReviewsAPI:
         data = helper.assert_success_response(response)
         
         assert_review_structure(data)
-        assert data["uuid"] == review_id
+        assert data["id"] == review_id
     
     def test_get_review_not_found(self, client, temp_lavel_dir):
         """测试获取不存在的 review"""
@@ -204,7 +204,7 @@ class TestReviewsAPI:
         assert data["title"] == "更新后的回顾"
         assert data["tags"] == ["新标签", "更新标签"]
         assert data["summary"] == "更新后的摘要"
-        assert data["uuid"] == review_id
+        assert data["id"] == review_id
         
         # 验证文件是否被更新
         review_file = temp_lavel_dir / "reviews" / f"{review_id}.json"

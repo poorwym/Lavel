@@ -33,7 +33,7 @@ class UpgradeThoughtToKnowledgeRequest(BaseModel):
 # Response Models
 class ThoughtResponse(BaseModel):
     """单个thought的响应模型"""
-    uuid: str = Field(..., description="唯一标识")
+    id: str = Field(..., description="唯一标识")
     summary: Optional[str] = Field(None, description="思维概括")
     tags: List[str] = Field(..., description="标签列表")
     root_block_id: str = Field(..., description="根块ID")

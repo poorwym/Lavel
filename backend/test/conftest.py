@@ -176,7 +176,7 @@ def create_test_knowledge(temp_dir: Path, knowledge_data: Dict[str, Any] = None)
     
     knowledge_id = str(uuid.uuid4())
     knowledge_data.update({
-        "uuid": knowledge_id,
+        "id": knowledge_id,
         "created_at": datetime.now().isoformat(),
         "updated_at": datetime.now().isoformat(),
         "linked_blocks": [],
@@ -207,7 +207,7 @@ def create_test_thought(temp_dir: Path, thought_data: Dict[str, Any] = None) -> 
     
     thought_id = str(uuid.uuid4())
     thought_data.update({
-        "uuid": thought_id,
+        "id": thought_id,
         "created_at": datetime.now().isoformat(),
         "updated_at": datetime.now().isoformat()
     })
@@ -241,7 +241,7 @@ def create_test_todo(temp_dir: Path, todo_data: Dict[str, Any] = None) -> str:
     
     todo_id = str(uuid.uuid4())
     todo_data.update({
-        "uuid": todo_id,
+        "id": todo_id,
         "created_at": datetime.now().isoformat(),
         "updated_at": datetime.now().isoformat()
     })
@@ -251,7 +251,7 @@ def create_test_todo(temp_dir: Path, todo_data: Dict[str, Any] = None) -> str:
         processed_subtasks = []
         for subtask in todo_data["subtasks"]:
             processed_subtask = {
-                "uuid": subtask.get("uuid", subtask.get("id", str(uuid.uuid4()))),
+                "id": subtask.get("uuid", subtask.get("id", str(uuid.uuid4()))),
                 "content": subtask.get("content", subtask.get("title", "默认子任务内容")),
                 "status": subtask.get("status", "pending"),
                 "depends_on": subtask.get("depends_on", []),
@@ -288,7 +288,7 @@ def create_test_review(temp_dir: Path, review_data: Dict[str, Any] = None) -> st
     
     review_id = str(uuid.uuid4())
     review_data.update({
-        "uuid": review_id,
+        "id": review_id,
         "created_at": datetime.now().isoformat()
     })
     

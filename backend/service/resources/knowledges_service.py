@@ -50,7 +50,7 @@ def load_knowledge(knowledge_id: str) -> Optional[Knowledge]:
 
 def save_knowledge(knowledge: Knowledge) -> None:
     """保存 knowledge 到文件"""
-    knowledge_file = get_knowledges_dir() / f"{knowledge.uuid}.json"
+    knowledge_file = get_knowledges_dir() / f"{knowledge.id}.json"
     with open(knowledge_file, 'w', encoding='utf-8') as f:
         json.dump(knowledge.model_dump(mode='json'), f, ensure_ascii=False, indent=2)
 
@@ -81,7 +81,7 @@ def list_all_knowledges() -> List[Knowledge]:
 def _knowledge_to_response(knowledge: Knowledge) -> KnowledgeResponse:
     """将Knowledge模型转换为KnowledgeResponse"""
     return KnowledgeResponse(
-        uuid=knowledge.uuid,
+        id=knowledge.id,
         title=knowledge.title,
         description=knowledge.description,
         tags=knowledge.tags,
@@ -156,7 +156,7 @@ async def create_knowledge(knowledge_request: CreateKnowledgeRequest) -> Knowled
     root_block = await blocks_service.create_block(root_block_request)
     
     knowledge = Knowledge(
-        uuid=knowledge_id,
+        id=knowledge_id,
         title=knowledge_request.title,
         description=knowledge_request.description,
         tags=knowledge_request.tags,
@@ -230,7 +230,7 @@ async def export_knowledge_to_markdown(
     # 添加元数据
     if include_metadata:
         markdown_content.append("---")
-        markdown_content.append(f"UUID: {knowledge.uuid}")
+        markdown_content.append(f"UUID: {knowledge.id}")
         markdown_content.append(f"Created: {knowledge.created_at.isoformat()}")
         markdown_content.append(f"Updated: {knowledge.updated_at.isoformat()}")
         if knowledge.tags:
@@ -274,9 +274,9 @@ async def get_knowledge_backlinks(knowledge_id: str) -> Optional[KnowledgeBackli
     all_knowledges = list_all_knowledges()
     knowledge_backlinks = []
     for k in all_knowledges:
-        if k.uuid != knowledge_id and knowledge_id in (k.linked_blocks or []):
+        if k.id != knowledge_id and knowledge_id in (k.linked_blocks or []):
             knowledge_backlinks.append(BacklinkItem(
-                uuid=k.uuid,
+                id=k.id,
                 title=k.title,
                 created_at=k.created_at
             ))

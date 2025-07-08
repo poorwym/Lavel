@@ -41,7 +41,7 @@ class LinkBlockToKnowledgeRequest(BaseModel):
 # Response Models
 class KnowledgeResponse(BaseModel):
     """单个knowledge的响应模型"""
-    uuid: str = Field(..., description="唯一标识")
+    id: str = Field(..., description="唯一标识")
     title: str = Field(..., description="知识标题")
     description: str = Field(..., description="简介")
     tags: List[str] = Field(..., description="标签列表")
@@ -72,7 +72,7 @@ class KnowledgeListResponse(BaseModel):
 
 class BacklinkItem(BaseModel):
     """反向链接项模型"""
-    uuid: str = Field(..., description="引用文档的ID")
+    id: str = Field(..., description="引用文档的ID")
     title: str = Field(..., description="引用文档的标题")
     created_at: datetime = Field(..., description="创建时间")
 

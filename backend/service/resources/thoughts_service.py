@@ -49,7 +49,7 @@ def load_thought(thought_id: str) -> Optional[Thought]:
 
 def save_thought(thought: Thought) -> None:
     """保存 thought 到文件"""
-    thought_file = get_thoughts_dir() / f"{thought.uuid}.json"
+    thought_file = get_thoughts_dir() / f"{thought.id}.json"
     with open(thought_file, 'w', encoding='utf-8') as f:
         json.dump(thought.model_dump(mode='json'), f, ensure_ascii=False, indent=2)
 
@@ -80,7 +80,7 @@ def list_all_thoughts() -> List[Thought]:
 def _thought_to_response(thought: Thought) -> ThoughtResponse:
     """将Thought模型转换为ThoughtResponse"""
     return ThoughtResponse(
-        uuid=thought.uuid,
+        id=thought.id,
         summary=thought.summary,
         tags=thought.tags,
         root_block_id=thought.root_block_id,
@@ -179,7 +179,7 @@ async def create_thought(thought_request: CreateThoughtRequest) -> ThoughtRespon
     root_block = await blocks_service.create_block(root_block_request)
     
     thought = Thought(
-        uuid=thought_id,
+        id=thought_id,
         summary=summary,
         tags=thought_request.tags,
         root_block_id=root_block.id,  # root_block现在是BlockResponse对象

@@ -77,7 +77,7 @@ class AddSubtaskRequest(BaseModel):
 # Response Models
 class TaskNodeResponse(BaseModel):
     """子任务节点的响应模型"""
-    uuid: str = Field(..., description="唯一标识")
+    id: str = Field(..., description="唯一标识")
     content: str = Field(..., description="任务内容")
     status: Literal["pending", "done"] = Field(..., description="任务状态")
     depends_on: List[str] = Field(..., description="依赖的其他TaskNode ID")
@@ -93,7 +93,7 @@ class TaskNodeResponse(BaseModel):
 
 class TodoResponse(BaseModel):
     """单个todo的响应模型"""
-    uuid: str = Field(..., description="唯一标识")
+    id: str = Field(..., description="唯一标识")
     title: str = Field(..., description="任务标题")
     description: Optional[str] = Field(None, description="任务描述")
     status: Literal["pending", "in_progress", "done", "archived"] = Field(..., description="任务状态")
@@ -120,7 +120,7 @@ class SubtasksStatsResponse(BaseModel):
 
 class TodoWithStatsResponse(BaseModel):
     """包含统计信息的todo响应模型"""
-    uuid: str = Field(..., description="唯一标识")
+    id: str = Field(..., description="唯一标识")
     title: str = Field(..., description="任务标题")
     description: Optional[str] = Field(None, description="任务描述")
     status: Literal["pending", "in_progress", "done", "archived"] = Field(..., description="任务状态")

@@ -150,11 +150,11 @@ class TestThoughtsAPI:
         assert_thought_structure(data)
         assert data["summary"] == sample_thought_data["summary"]
         assert data["tags"] == sample_thought_data["tags"]
-        assert "uuid" in data
+        assert "id" in data
         assert "created_at" in data
         
         # 验证文件是否被创建
-        thought_file = temp_lavel_dir / "thoughts" / f"{data['uuid']}.json"
+        thought_file = temp_lavel_dir / "thoughts" / f"{data['id']}.json"
         assert thought_file.exists()
     
     def test_create_thought_minimal_data(self, client, temp_lavel_dir):
@@ -168,7 +168,7 @@ class TestThoughtsAPI:
         
         assert data["summary"] == "这是一个简单的想法"
         assert "tags" in data   # 应该有默认值
-        assert "uuid" in data   # 应该有生成的UUID
+        assert "id" in data   # 应该有生成的ID
     
     def test_create_thought_with_auto_title(self, client, temp_lavel_dir):
         """测试创建 thought 时的基本功能"""
@@ -184,7 +184,7 @@ class TestThoughtsAPI:
         
         assert data["summary"] == data_with_summary["summary"]
         assert data["tags"] == data_with_summary["tags"]
-        assert "uuid" in data
+        assert "id" in data
     
     def test_get_thought_success(self, client, temp_lavel_dir):
         """测试成功获取 thought"""
@@ -197,7 +197,7 @@ class TestThoughtsAPI:
         data = helper.assert_success_response(response)
         
         assert_thought_structure(data)
-        assert data["uuid"] == thought_id
+        assert data["id"] == thought_id
     
     def test_get_thought_not_found(self, client, temp_lavel_dir):
         """测试获取不存在的 thought"""
@@ -228,7 +228,7 @@ class TestThoughtsAPI:
         
         assert data["summary"] == "更新后的想法概述"
         assert data["tags"] == ["新标签", "更新标签"]
-        assert data["uuid"] == thought_id
+        assert data["id"] == thought_id
         
         # 验证文件是否被更新
         thought_file = temp_lavel_dir / "thoughts" / f"{thought_id}.json"

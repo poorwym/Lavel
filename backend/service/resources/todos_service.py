@@ -62,7 +62,7 @@ def load_todo(todo_id: str) -> Optional[Todo]:
 
 def save_todo(todo: Todo) -> None:
     """保存 todo 到文件"""
-    todo_file = get_todos_dir() / f"{todo.uuid}.json"
+    todo_file = get_todos_dir() / f"{todo.id}.json"
     with open(todo_file, 'w', encoding='utf-8') as f:
         # 使用mode='json'来确保datetime被正确序列化
         json.dump(todo.model_dump(mode='json'), f, ensure_ascii=False, indent=2)
@@ -94,7 +94,7 @@ def list_all_todos() -> List[Todo]:
 def _tasknode_to_response(task: TaskNode) -> TaskNodeResponse:
     """将TaskNode模型转换为TaskNodeResponse"""
     return TaskNodeResponse(
-        uuid=task.uuid,
+        id=task.id,
         content=task.content,
         status=task.status,
         depends_on=task.depends_on,
@@ -108,7 +108,7 @@ def _tasknode_to_response(task: TaskNode) -> TaskNodeResponse:
 def _todo_to_response(todo: Todo) -> TodoResponse:
     """将Todo模型转换为TodoResponse"""
     return TodoResponse(
-        uuid=todo.uuid,
+        id=todo.id,
         title=todo.title,
         description=todo.description,
         status=todo.status,
@@ -132,7 +132,7 @@ def _todo_to_stats_response(todo: Todo) -> TodoWithStatsResponse:
     )
     
     return TodoWithStatsResponse(
-        uuid=todo.uuid,
+        id=todo.id,
         title=todo.title,
         description=todo.description,
         status=todo.status,
@@ -228,7 +228,7 @@ async def create_todo(todo_request: CreateTodoRequest) -> TodoResponse:
             pass
     
     todo = Todo(
-        uuid=todo_id,
+        id=todo_id,
         title=todo_request.title,
         description=todo_request.description,
         tags=todo_request.tags,
@@ -365,7 +365,7 @@ async def update_subtask_status(
     # 找到子任务
     subtask = None
     for s in todo.subtasks:
-        if s.uuid == subtask_id:
+        if s.id == subtask_id:
             subtask = s
             break
     
@@ -393,7 +393,7 @@ async def update_subtask_status(
     return UpdateSubtaskStatusResponse(
         success=True,
         updated_subtask={
-            "id": subtask.uuid,
+            "id": subtask.id,
             "content": subtask.content,
             "status": subtask.status,
             "status_change": f"{old_status} -> {status}"
@@ -419,7 +419,7 @@ async def add_subtask(
     content = subtask_request.content or subtask_request.title or ""
     
     new_subtask = TaskNode(
-        uuid=subtask_id,
+        id=subtask_id,
         content=content,
         status="pending",
         depends_on=subtask_request.depends_on or subtask_request.dependencies or [],
@@ -453,7 +453,7 @@ async def _auto_expand_subtasks(todo: Todo, expand_prompt: Optional[str] = None)
     
     for i, content in enumerate(default_subtasks):
         subtask = TaskNode(
-            uuid=str(uuid.uuid4()),
+            id=str(uuid.uuid4()),
             content=content,
             status="pending",
             depends_on=[default_subtasks[i-1]] if i > 0 else [],
@@ -472,7 +472,7 @@ def _build_dag_info(subtasks: List[TaskNode]) -> DAGInfo:
     
     for subtask in subtasks:
         nodes.append(DAGNodeInfo(
-            id=subtask.uuid,
+            id=subtask.id,
             label=subtask.content,
             status=subtask.status
         ))
@@ -480,7 +480,7 @@ def _build_dag_info(subtasks: List[TaskNode]) -> DAGInfo:
         for dep_id in subtask.depends_on:
             edges.append(DAGEdgeInfo(
                 from_node=dep_id,
-                to=subtask.uuid
+                to=subtask.id
             ))
     
     return DAGInfo(
@@ -503,7 +503,7 @@ def _check_dag_cycles(subtasks: List[TaskNode]) -> bool:
         # 找到当前节点
         current_node = None
         for subtask in subtasks:
-            if subtask.uuid == node_id:
+            if subtask.id == node_id:
                 current_node = subtask
                 break
         
@@ -519,8 +519,8 @@ def _check_dag_cycles(subtasks: List[TaskNode]) -> bool:
         return False
     
     for subtask in subtasks:
-        if subtask.uuid not in visited:
-            if has_cycle(subtask.uuid):
+        if subtask.id not in visited:
+            if has_cycle(subtask.id):
                 return True
     
     return False

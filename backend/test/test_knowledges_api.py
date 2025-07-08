@@ -141,11 +141,11 @@ class TestKnowledgesAPI:
         assert data["title"] == sample_knowledge_data["title"]
         assert data["description"] == sample_knowledge_data["description"]
         assert data["tags"] == sample_knowledge_data["tags"]
-        assert "uuid" in data
+        assert "id" in data
         assert "created_at" in data
         
         # 验证文件是否被创建
-        knowledge_file = temp_lavel_dir / "knowledges" / f"{data['uuid']}.json"
+        knowledge_file = temp_lavel_dir / "knowledges" / f"{data['id']}.json"
         assert knowledge_file.exists()
     
     def test_create_knowledge_minimal_data(self, client, temp_lavel_dir):
@@ -175,7 +175,7 @@ class TestKnowledgesAPI:
         data = helper.assert_success_response(response)
         
         assert_knowledge_structure(data)
-        assert data["uuid"] == knowledge_id
+        assert data["id"] == knowledge_id
     
     def test_get_knowledge_not_found(self, client, temp_lavel_dir):
         """测试获取不存在的 knowledge"""
@@ -209,7 +209,7 @@ class TestKnowledgesAPI:
         assert data["title"] == "更新后的标题"
         assert data["description"] == "更新后的描述"
         assert data["tags"] == ["新标签", "更新标签"]
-        assert data["uuid"] == knowledge_id
+        assert data["id"] == knowledge_id
         
         # 验证文件是否被更新
         knowledge_file = temp_lavel_dir / "knowledges" / f"{knowledge_id}.json"
