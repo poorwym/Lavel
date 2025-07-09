@@ -1,0 +1,32 @@
+{
+  "name": "@lavel/undo-system",
+  "version": "1.0.0",
+  "description": "A comprehensive undo/redo system for the Lavel command system",
+  "main": "index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "example": "ts-node example.ts",
+    "build": "tsc",
+    "lint": "eslint . --ext .ts"
+  },
+  "keywords": [
+    "undo",
+    "redo",
+    "command",
+    "history",
+    "transaction"
+  ],
+  "author": "alex",
+  "license": "ISC",
+  "dependencies": {
+    "@lavel/command-system": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3",
+    "ts-node": "^10.9.1",
+    "@types/node": "^20.0.0"
+  },
+  "peerDependencies": {
+    "@lavel/command-system": "workspace:*"
+  }
+}
