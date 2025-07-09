@@ -7,7 +7,7 @@ import {
   builtinMiddleware,
   ICommandContext 
 } from './index';
-import { CommandLoader, allCommands } from './commands';
+import { CommandLoader, allCommands } from './commands/index';
 
 // 创建命令系统实例
 const commandSystem = createCommandSystem({
@@ -198,7 +198,7 @@ function createCustomCommand() {
       return {
         success: true,
         data: {
-          greeting: greetings[language],
+          greeting: greetings[language as keyof typeof greetings],
           name,
           language,
           timestamp: new Date().toLocaleString('zh-CN')
@@ -225,9 +225,7 @@ async function main() {
   await executeCommand('greet', { name: '田中', language: 'ja' });
 }
 
-// 如果直接运行此文件，则执行示例
-if (require.main === module) {
-  main().catch(console.error);
-}
+// 运行主函数
+main().catch(console.error);
 
 export { commandSystem, executeCommand, runExamples }; 

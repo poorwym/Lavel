@@ -38,7 +38,7 @@ importers:
         version: 19.1.6(@types/react@19.1.8)
       '@vitejs/plugin-react-swc':
         specifier: ^3.10.2
-        version: 3.10.2(@swc/helpers@0.5.15)(vite@7.0.3(@types/node@22.15.3))
+        version: 3.10.2(@swc/helpers@0.5.15)(vite@7.0.3(@types/node@20.19.6))
       concurrently:
         specifier: ^9.2.0
         version: 9.2.0
@@ -71,7 +71,7 @@ importers:
         version: 8.36.0(eslint@9.30.1)(typescript@5.8.3)
       vite:
         specifier: ^7.0.3
-        version: 7.0.3(@types/node@22.15.3)
+        version: 7.0.3(@types/node@20.19.6)
       wait-on:
         specifier: ^8.0.3
         version: 8.0.3
@@ -154,6 +154,12 @@ importers:
 
   packages/command-system:
     devDependencies:
+      '@types/node':
+        specifier: ^20.19.6
+        version: 20.19.6
+      ts-node:
+        specifier: ^10.9.2
+        version: 10.9.2(@swc/core@1.12.11(@swc/helpers@0.5.15))(@types/node@20.19.6)(typescript@5.8.3)
       typescript:
         specifier: ^5.8.3
         version: 5.8.3
@@ -193,6 +199,25 @@ importers:
       typescript-eslint:
         specifier: ^8.35.0
         version: 8.35.0(eslint@9.30.0)(typescript@5.8.2)
+
+  packages/shortcut-system:
+    dependencies:
+      '@lavel/command-system':
+        specifier: workspace:*
+        version: link:../command-system
+      '@lavel/undo-system':
+        specifier: workspace:*
+        version: link:../undo-system
+    devDependencies:
+      '@types/node':
+        specifier: ^20.19.6
+        version: 20.19.6
+      ts-node:
+        specifier: ^10.9.2
+        version: 10.9.2(@swc/core@1.12.11(@swc/helpers@0.5.15))(@types/node@20.19.6)(typescript@5.8.3)
+      typescript:
+        specifier: ^5.8.3
+        version: 5.8.3
 
   packages/typescript-config: {}
 
@@ -3839,7 +3864,7 @@ snapshots:
     dependencies:
       '@types/http-cache-semantics': 4.0.4
       '@types/keyv': 3.1.4
-      '@types/node': 22.15.3
+      '@types/node': 20.19.6
       '@types/responselike': 1.0.3
 
   '@types/debug@4.1.12':
@@ -3850,7 +3875,7 @@ snapshots:
 
   '@types/fs-extra@9.0.13':
     dependencies:
-      '@types/node': 22.15.3
+      '@types/node': 20.19.6
 
   '@types/http-cache-semantics@4.0.4': {}
 
@@ -3858,7 +3883,7 @@ snapshots:
 
   '@types/keyv@3.1.4':
     dependencies:
-      '@types/node': 22.15.3
+      '@types/node': 20.19.6
 
   '@types/ms@2.1.0': {}
 
@@ -3872,7 +3897,7 @@ snapshots:
 
   '@types/plist@3.0.5':
     dependencies:
-      '@types/node': 22.15.3
+      '@types/node': 20.19.6
       xmlbuilder: 15.1.1
     optional: true
 
@@ -3894,14 +3919,14 @@ snapshots:
 
   '@types/responselike@1.0.3':
     dependencies:
-      '@types/node': 22.15.3
+      '@types/node': 20.19.6
 
   '@types/verror@1.10.11':
     optional: true
 
   '@types/yauzl@2.10.3':
     dependencies:
-      '@types/node': 22.15.3
+      '@types/node': 20.19.6
     optional: true
 
   '@typescript-eslint/eslint-plugin@8.35.0(@typescript-eslint/parser@8.35.0(eslint@9.30.0)(typescript@5.8.2))(eslint@9.30.0)(typescript@5.8.2)':
@@ -4088,11 +4113,11 @@ snapshots:
       '@typescript-eslint/types': 8.36.0
       eslint-visitor-keys: 4.2.1
 
-  '@vitejs/plugin-react-swc@3.10.2(@swc/helpers@0.5.15)(vite@7.0.3(@types/node@22.15.3))':
+  '@vitejs/plugin-react-swc@3.10.2(@swc/helpers@0.5.15)(vite@7.0.3(@types/node@20.19.6))':
     dependencies:
       '@rolldown/pluginutils': 1.0.0-beta.11
       '@swc/core': 1.12.11(@swc/helpers@0.5.15)
-      vite: 7.0.3(@types/node@22.15.3)
+      vite: 7.0.3(@types/node@20.19.6)
     transitivePeerDependencies:
       - '@swc/helpers'
 
@@ -6559,7 +6584,7 @@ snapshots:
       extsprintf: 1.4.1
     optional: true
 
-  vite@7.0.3(@types/node@22.15.3):
+  vite@7.0.3(@types/node@20.19.6):
     dependencies:
       esbuild: 0.25.6
       fdir: 6.4.6(picomatch@4.0.2)
@@ -6568,7 +6593,7 @@ snapshots:
       rollup: 4.44.2
       tinyglobby: 0.2.14
     optionalDependencies:
-      '@types/node': 22.15.3
+      '@types/node': 20.19.6
       fsevents: 2.3.3
 
   wait-on@8.0.3:

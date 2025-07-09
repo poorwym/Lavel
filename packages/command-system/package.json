@@ -4,12 +4,17 @@
   "description": "",
   "main": "index.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "example": "ts-node example.ts",
+    "build": "tsc",
+    "lint": "eslint . --ext .ts"
   },
   "keywords": [],
   "author": "alex",
   "license": "ISC",
   "devDependencies": {
+    "@types/node": "^20.19.6",
+    "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
   }
 }
