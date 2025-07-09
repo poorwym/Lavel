@@ -49,7 +49,7 @@ export const helpCommand: ICommand = {
         aliases: command.aliases || [],
         requireAuth: command.requireAuth || false,
         permissions: command.permissions || [],
-        parameters: (command.parameters || []).map(param => ({
+        parameters: (command.parameters || []).map((param: any) => ({
           name: param.name,
           description: param.description,
           type: param.type,
@@ -64,18 +64,18 @@ export const helpCommand: ICommand = {
         data: {
           command: helpInfo,
           usage: `使用方法: ${command.name} ${(command.parameters || [])
-            .map(p => p.required ? `<${p.name}>` : `[${p.name}]`)
+            .map((p: any) => p.required ? `<${p.name}>` : `[${p.name}]`)
             .join(' ')}`
         }
       };
     } else {
       // 显示所有命令的概览
       const allCommands = commandSystem.getAllCommands();
-      const categories = [...new Set(allCommands.map(cmd => cmd.category).filter(Boolean))];
+      const categories = [...new Set(allCommands.map((cmd: any) => cmd.category).filter(Boolean))];
       
-      const commandsByCategory = categories.reduce((acc, category) => {
+      const commandsByCategory = categories.reduce((acc: Record<string, any[]>, category: any) => {
         acc[category] = commandSystem.getCommandsByCategory(category)
-          .map(cmd => ({
+          .map((cmd: any) => ({
             name: cmd.name,
             description: cmd.description,
             aliases: cmd.aliases || []
@@ -85,8 +85,8 @@ export const helpCommand: ICommand = {
       
       // 未分类命令
       const uncategorized = allCommands
-        .filter(cmd => !cmd.category)
-        .map(cmd => ({
+        .filter((cmd: any) => !cmd.category)
+        .map((cmd: any) => ({
           name: cmd.name,
           description: cmd.description,
           aliases: cmd.aliases || []

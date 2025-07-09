@@ -154,6 +154,12 @@ importers:
 
   packages/command-system:
     devDependencies:
+      '@types/node':
+        specifier: ^20.19.6
+        version: 20.19.6
+      ts-node:
+        specifier: ^10.9.2
+        version: 10.9.2(@swc/core@1.12.11(@swc/helpers@0.5.15))(@types/node@20.19.6)(typescript@5.8.3)
       typescript:
         specifier: ^5.8.3
         version: 5.8.3
