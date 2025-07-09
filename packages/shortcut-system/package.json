@@ -1,0 +1,32 @@
+{
+  "name": "@lavel/shortcut-system",
+  "version": "1.0.0",
+  "description": "A comprehensive shortcut system for the Lavel command system",
+  "main": "index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "example": "ts-node example.ts",
+    "build": "tsc",
+    "lint": "eslint . --ext .ts"
+  },
+  "keywords": [
+    "shortcut",
+    "command",
+    "system"
+  ],
+  "author": "alex",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^20.19.6",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "@lavel/command-system": "workspace:*",
+    "@lavel/undo-system": "workspace:*"
+  },
+  "peerDependencies": {
+    "@lavel/command-system": "workspace:*",
+    "@lavel/undo-system": "workspace:*"
+  }
+}
