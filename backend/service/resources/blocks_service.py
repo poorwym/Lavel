@@ -127,7 +127,7 @@ async def list_blocks(
 
 async def create_block(block_request: CreateBlockRequest) -> BlockResponse:
     """创建新的 block"""
-    block_id = str(uuid.uuid4())
+    block_id = block_request.id or str(uuid.uuid4())
     now = datetime.now()
     
     block = Block(

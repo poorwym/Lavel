@@ -20,10 +20,16 @@ contextBridge.exposeInMainWorld('lavel', {
   openFile: () => ipcRenderer.invoke('open-file'),
   saveFile: (data: any) => ipcRenderer.invoke('save-file', data),
   
+  // 快速输入 API
+  quickInput: {
+    submit: (content: string) => ipcRenderer.invoke('quick-input-submit', content),
+    cancel: () => ipcRenderer.invoke('quick-input-cancel')
+  },
+  
   // 监听器管理
   on: (channel: string, listener: (event: IpcRendererEvent, ...args: any[]) => void) => {
     // 添加安全检查，只允许特定的频道
-    const validChannels = ['app-update', 'window-focus', 'window-blur']
+    const validChannels = ['app-update', 'window-focus', 'window-blur', 'quick-input-received']
     if (validChannels.includes(channel)) {
       ipcRenderer.on(channel, listener)
     }
@@ -49,6 +55,10 @@ export interface LavelAPI {
   closeWindow: () => Promise<void>
   openFile: () => Promise<string | null>
   saveFile: (data: any) => Promise<boolean>
+  quickInput: {
+    submit: (content: string) => Promise<{ success: boolean }>
+    cancel: () => Promise<void>
+  }
   on: (channel: string, listener: (event: IpcRendererEvent, ...args: any[]) => void) => void
   off: (channel: string, listener: (...args: any[]) => void) => void
   removeAllListeners: (channel: string) => void

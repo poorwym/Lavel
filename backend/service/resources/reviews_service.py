@@ -151,7 +151,7 @@ async def list_reviews(
 
 async def create_review(review_request: CreateReviewRequest) -> ReviewResponse:
     """创建新的review"""
-    review_id = str(uuid.uuid4())
+    review_id = review_request.id or str(uuid.uuid4())
     now = datetime.now()
     
     # 创建根 block

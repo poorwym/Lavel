@@ -33,6 +33,7 @@ class Todo(LavelResource):
 # Request Models
 class CreateTodoRequest(BaseModel):
     """创建todo的请求模型"""
+    id: Optional[str] = Field(None, description="指定的任务ID，不提供则自动生成")
     title: str = Field(..., description="任务标题")
     description: Optional[str] = Field(None, description="任务描述")
     due_date: Optional[str] = Field(None, description="截止日期，格式：YYYY-MM-DD")
@@ -65,6 +66,7 @@ class UpdateSubtaskStatusRequest(BaseModel):
 
 class AddSubtaskRequest(BaseModel):
     """添加子任务的请求模型"""
+    id: Optional[str] = Field(None, description="指定的子任务ID，不提供则自动生成")
     content: Optional[str] = Field(None, description="子任务内容")
     title: Optional[str] = Field(None, description="子任务标题")  # 兼容API文档
     description: Optional[str] = Field(None, description="子任务描述") 

@@ -5,17 +5,23 @@
   "type": "module",
   "scripts": {
     "dev": "concurrently -n VITE,ELECTRON -c cyan,magenta \"vite\" \"pnpm run electron:dev\"",
-    "electron:dev": "tsc -p electron && mv out/main.js out/main.cjs && mv out/preload.js out/preload.cjs && wait-on http://localhost:5173 && electron ./out/main.cjs",
-    "build": "tsc -b && vite build && tsc -p electron && mv out/main.js out/main.cjs && mv out/preload.js out/preload.cjs",
+    "electron:dev": "tsc -p electron && pnpm run rename-js-to-cjs && wait-on http://localhost:5173 && electron ./out/main.cjs",
+    "build": "tsc -b && vite build && tsc -p electron && pnpm run rename-js-to-cjs",
     "start": "electron ./out/main.cjs",
-    "electron:build": "tsc -p electron && mv out/main.js out/main.cjs && mv out/preload.js out/preload.cjs",
+    "electron:build": "tsc -p electron && pnpm run rename-js-to-cjs",
+    "rename-js-to-cjs": "node scripts/rename-js-to-cjs.cjs",
     "package": "electron-builder",
     "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/material": "^7.2.0",
+    "@tailwindcss/vite": "^4.1.11",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "tailwindcss": "^4.1.11"
   },
   "devDependencies": {
     "@eslint/js": "^9.30.1",
@@ -52,7 +58,10 @@
       "target": [
         {
           "target": "dmg",
-          "arch": ["x64", "arm64"]
+          "arch": [
+            "x64",
+            "arm64"
+          ]
         }
       ]
     },
@@ -60,7 +69,9 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ]
     },
@@ -68,10 +79,11 @@
       "target": [
         {
           "target": "AppImage",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ]
     }
   }
 }
- 

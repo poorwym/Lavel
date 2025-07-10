@@ -163,7 +163,7 @@ async def list_thoughts(
 
 async def create_thought(thought_request: CreateThoughtRequest) -> ThoughtResponse:
     """创建新的思考笔记"""
-    thought_id = str(uuid.uuid4())
+    thought_id = thought_request.id or str(uuid.uuid4())
     now = datetime.now()
     
     # 创建根 block

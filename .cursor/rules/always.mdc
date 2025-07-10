@@ -1,0 +1,7 @@
+---
+alwaysApply: true
+---
+
+package 中内容不可访问 React、window、document、Electron 等前端或平台 API
+
+ui技术栈, 使用tailwindcss 和 material ui, 尽可能使用flex布局

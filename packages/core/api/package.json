@@ -1,0 +1,22 @@
+{
+  "name": "@lavel/api",
+  "private": true,
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "generate-client": "openapi-ts --input http://localhost:8000/openapi.json --output ./index.ts --client axios"
+  },
+  "keywords": [],
+  "author": "alex",
+  "license": "ISC",
+  "devDependencies": {
+    "@hey-api/openapi-ts": "^0.78.3"
+  },
+  "dependencies": {
+    "@types/node": "^24.0.12",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
+}

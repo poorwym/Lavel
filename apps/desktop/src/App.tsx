@@ -7,12 +7,25 @@ function App() {
   const [count, setCount] = useState(0)
   const [electronStatus, setElectronStatus] = useState<string>('检测中...')
   const [platform, setPlatform] = useState<string>('未知')
+  const [quickInputHistory, setQuickInputHistory] = useState<string[]>([])
 
   useEffect(() => {
     // 检测是否在 Electron 环境中
     if (window.lavel) {
       setElectronStatus('✅ Electron 环境检测成功')
       setPlatform(window.lavel.platform)
+      
+      // 监听快速输入内容
+      const handleQuickInput = (event: any, content: string) => {
+        console.log('收到快速输入:', content)
+        setQuickInputHistory(prev => [content, ...prev.slice(0, 9)]) // 保留最近10条
+      }
+      
+      window.lavel.on('quick-input-received', handleQuickInput)
+      
+      return () => {
+        window.lavel.off('quick-input-received', handleQuickInput)
+      }
     } else {
       setElectronStatus('❌ 浏览器环境（非 Electron）')
     }
@@ -60,6 +73,37 @@ function App() {
         <p>
           编辑 <code>src/App.tsx</code> 并保存以测试热重载
         </p>
+      </div>
+
+      {/* 快速输入历史 */}
+      <div className="card">
+        <h3>⚡ 快速输入历史</h3>
+        <p style={{ fontSize: '14px', color: '#666' }}>
+          使用 {platform === 'darwin' ? 'Cmd+Space' : 'Ctrl+Space'} 触发快速输入
+        </p>
+        {quickInputHistory.length > 0 ? (
+          <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+            {quickInputHistory.map((item, index) => (
+              <div 
+                key={index} 
+                style={{ 
+                  padding: '8px 12px', 
+                  margin: '4px 0', 
+                  background: '#f5f5f5', 
+                  borderRadius: '4px',
+                  fontSize: '14px',
+                  textAlign: 'left'
+                }}
+              >
+                {item}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p style={{ color: '#999', fontStyle: 'italic' }}>
+            暂无快速输入记录
+          </p>
+        )}
       </div>
       
       <p className="read-the-docs">

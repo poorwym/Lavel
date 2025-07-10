@@ -13,6 +13,7 @@ class Thought(LavelResource):
 # Request Models
 class CreateThoughtRequest(BaseModel):
     """创建thought的请求模型"""
+    id: Optional[str] = Field(None, description="指定的思考ID，不提供则自动生成")
     summary: Optional[str] = Field(None, description="思考内容概述")
     tags: Optional[List[str]] = Field(default_factory=list, description="标签列表")
 

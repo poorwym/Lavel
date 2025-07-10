@@ -21,6 +21,7 @@ class Block(BaseModel):
 # Request Models
 class CreateBlockRequest(BaseModel):
     """创建block的请求模型"""
+    id: Optional[str] = Field(None, description="指定的块ID，不提供则自动生成")
     content: str = Field(..., description="文本内容")
     parent_id: Optional[str] = Field(None, description="所属父块ID")
     prev_id: Optional[str] = Field(None, description="左兄弟块ID")

@@ -23,6 +23,12 @@ declare global {
       openFile: () => Promise<string | null>
       saveFile: (data: any) => Promise<boolean>
       
+      // 快速输入 API
+      quickInput: {
+        submit: (content: string) => Promise<{ success: boolean }>
+        cancel: () => Promise<void>
+      }
+      
       // 监听器管理
       on: (channel: string, listener: (event: IpcRendererEvent, ...args: any[]) => void) => void
       off: (channel: string, listener: (...args: any[]) => void) => void

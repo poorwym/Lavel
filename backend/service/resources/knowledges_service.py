@@ -144,7 +144,7 @@ async def list_knowledges(
 
 async def create_knowledge(knowledge_request: CreateKnowledgeRequest) -> KnowledgeResponse:
     """创建新的知识文档"""
-    knowledge_id = str(uuid.uuid4())
+    knowledge_id = knowledge_request.id or str(uuid.uuid4())
     now = datetime.now()
     
     # 创建根 block

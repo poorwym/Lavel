@@ -16,6 +16,7 @@ class Knowledge(LavelResource):
 # Request Models
 class CreateKnowledgeRequest(BaseModel):
     """创建knowledge的请求模型"""
+    id: Optional[str] = Field(None, description="指定的知识ID，不提供则自动生成")
     title: str = Field(..., description="文档标题")
     description: Optional[str] = Field("", description="文档描述")
     tags: Optional[List[str]] = Field(default_factory=list, description="标签列表")

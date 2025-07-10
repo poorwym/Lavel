@@ -207,7 +207,7 @@ async def list_todos(
 
 async def create_todo(todo_request: CreateTodoRequest) -> TodoResponse:
     """创建新的todo任务"""
-    todo_id = str(uuid.uuid4())
+    todo_id = todo_request.id or str(uuid.uuid4())
     now = datetime.now()
     
     # 创建根 block
@@ -413,7 +413,7 @@ async def add_subtask(
     if not todo:
         return None
     
-    subtask_id = str(uuid.uuid4())
+    subtask_id = subtask_request.id or str(uuid.uuid4())
     
     # 从request中获取内容，优先使用content，然后是title
     content = subtask_request.content or subtask_request.title or ""

@@ -1,7 +1,9 @@
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow, ipcMain, globalShortcut } from 'electron'
 import path from 'path'
+import { InputWindow } from './window/InputWindow'
 
 const isDev = !app.isPackaged
+let inputWindow: InputWindow
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -36,6 +38,12 @@ function createWindow() {
 // 应用准备就绪时创建窗口
 app.whenReady().then(() => {
   createWindow()
+  
+  // 初始化快速输入窗口实例
+  inputWindow = InputWindow.getInstance()
+  
+  // 注册全局快捷键
+  registerGlobalShortcuts()
 
   // macOS 特定：当应用被激活且没有窗口时，创建新窗口
   app.on('activate', () => {
@@ -44,6 +52,28 @@ app.whenReady().then(() => {
     }
   })
 })
+
+// 注册全局快捷键
+function registerGlobalShortcuts() {
+  // 注册快速输入快捷键 (Cmd+Space on macOS, Ctrl+Space on others)
+  const shortcut = process.platform === 'darwin' ? 'Cmd+Esc' : 'Ctrl+Esc'
+  
+  const ret = globalShortcut.register(shortcut, () => {
+    if (inputWindow.isVisible()) {
+      // 如果窗口已显示，则关闭
+      inputWindow.close()
+    } else {
+      // 否则显示窗口
+      inputWindow.show()
+    }
+  })
+
+  if (!ret) {
+    console.log('全局快捷键注册失败')
+  } else {
+    console.log(`全局快捷键 ${shortcut} 注册成功`)
+  }
+}
 
 // 所有窗口关闭时退出应用（除了 macOS）
 app.on('window-all-closed', () => {
@@ -131,5 +161,7 @@ ipcMain.handle('save-file', async (event, data) => {
 
 // 在应用准备退出时进行清理
 app.on('before-quit', () => {
-  // 在这里进行任何必要的清理工作
+  // 注销所有全局快捷键
+  globalShortcut.unregisterAll()
+  console.log('已注销所有全局快捷键')
 }) 
