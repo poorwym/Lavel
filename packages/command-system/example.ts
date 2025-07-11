@@ -20,7 +20,8 @@ const commandSystem = createCommandSystem({
 // 注册内置中间件
 commandSystem.use(builtinMiddleware.logger({ enableConsole: true }));
 commandSystem.use(builtinMiddleware.performance({ slowThreshold: 500 }));
-commandSystem.use(builtinMiddleware.rateLimit({ maxRequests: 10, windowMs: 60000 }));
+// 调整速率限制配置，使其更适合示例程序的需求
+commandSystem.use(builtinMiddleware.rateLimit({ maxRequests: 1000, windowMs: 60000 }));
 
 // 注册所有示例命令
 CommandLoader.registerAllCommands(commandSystem);

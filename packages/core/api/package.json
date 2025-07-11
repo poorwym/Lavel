@@ -2,22 +2,24 @@
   "name": "@lavel/api",
   "private": true,
   "version": "1.0.0",
-  "description": "",
+  "description": "Lavel Core API - HTTP客户端和命令系统集成",
   "main": "index.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "check-types": "tsc --noEmit",
+    "build": "tsc",
+    "dev": "ts-node example.ts",
     "generate-types": "openapi-ts --input http://localhost:8000/openapi.json --output ./api.d.ts"
   },
-  "keywords": [],
+  "keywords": ["lavel", "api", "http", "commands"],
   "author": "alex",
   "license": "ISC",
   "devDependencies": {
-    "@hey-api/openapi-ts": "^0.78.3"
-  },
-  "dependencies": {
+    "@hey-api/openapi-ts": "^0.78.3",
     "@types/node": "^24.0.12",
-    "axios": "^1.10.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "axios": "^1.10.0"
   }
 }
