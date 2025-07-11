@@ -40,5 +40,6 @@ yarn-error.log*
 .vscode/
 .idea/
 __pycache__/
-repomix_output.xml
+repomix-output.xml
 .turbo/
+configs/
