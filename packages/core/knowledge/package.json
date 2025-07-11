@@ -1,0 +1,33 @@
+{
+  "name": "@lavel/knowledge",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Lavel Knowledge 核心模块 - 知识文档管理系统",
+  "main": "index.ts",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "dev": "vitest",
+    "build": "tsc",
+    "type-check": "tsc --noEmit"
+  },
+  "keywords": ["lavel", "knowledge", "document", "command-system", "undo"],
+  "author": "alex",
+  "license": "ISC",
+  "dependencies": {
+    "@types/node": "^24.0.13",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  },
+  "devDependencies": {
+    "vitest": "^1.0.0",
+    "@vitest/coverage-v8": "^1.0.0",
+    "jsdom": "^23.0.0"
+  },
+  "peerDependencies": {
+    "@lavel/command-system": "workspace:*",
+    "@lavel/undo-system": "workspace:*"
+  }
+}
