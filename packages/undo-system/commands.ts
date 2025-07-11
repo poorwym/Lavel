@@ -1,5 +1,17 @@
 /**
- * 撤销系统内置命令
+ * @fileoverview 撤销系统内置命令集合
+ * 
+ * 提供完整的撤销相关命令实现，包括：
+ * - 基本撤销/重做命令
+ * - 历史记录查看和管理
+ * - 事务操作命令
+ * - 状态查询命令
+ * - 命令加载器
+ * 
+ * @author alex
+ * @since 1.0.0
+ * @version 1.0.0
+ * @public
  */
 
 import { ICommand, ICommandContext, ICommandResult } from '@lavel/command-system';
@@ -7,6 +19,24 @@ import { IUndoManager, IHistoryItem } from './types';
 
 /**
  * 撤销命令
+ * 
+ * 执行撤销操作的基础命令。支持单步撤销和批量撤销，
+ * 自动检查撤销的可用性并提供详细的执行结果。
+ * 
+ * @example
+ * ```typescript
+ * // 注册命令
+ * commandSystem.register(undoCommand);
+ * 
+ * // 执行单步撤销
+ * const result = await commandSystem.execute('undo');
+ * 
+ * // 执行批量撤销
+ * const result = await commandSystem.execute('undo', { steps: 3 });
+ * ```
+ * 
+ * @public
+ * @since 1.0.0
  */
 export const undoCommand: ICommand = {
   name: 'undo',
@@ -77,6 +107,24 @@ export const undoCommand: ICommand = {
 
 /**
  * 重做命令
+ * 
+ * 执行重做操作的基础命令。支持单步重做和批量重做，
+ * 自动检查重做的可用性并提供详细的执行结果。
+ * 
+ * @example
+ * ```typescript
+ * // 注册命令
+ * commandSystem.register(redoCommand);
+ * 
+ * // 执行单步重做
+ * const result = await commandSystem.execute('redo');
+ * 
+ * // 执行批量重做
+ * const result = await commandSystem.execute('redo', { steps: 2 });
+ * ```
+ * 
+ * @public
+ * @since 1.0.0
  */
 export const redoCommand: ICommand = {
   name: 'redo',
@@ -147,6 +195,30 @@ export const redoCommand: ICommand = {
 
 /**
  * 查看撤销历史命令
+ * 
+ * 查看和检索撤销历史记录的命令。支持不同的历史类型查看，
+ * 可以限制返回的记录数量，并格式化输出便于显示。
+ * 
+ * @example
+ * ```typescript
+ * // 查看最近10个撤销记录
+ * const result = await commandSystem.execute('undo:history');
+ * 
+ * // 查看最近20个重做记录
+ * const result = await commandSystem.execute('undo:history', { 
+ *   limit: 20, 
+ *   type: 'redo' 
+ * });
+ * 
+ * // 查看所有历史记录
+ * const result = await commandSystem.execute('undo:history', { 
+ *   limit: 100, 
+ *   type: 'both' 
+ * });
+ * ```
+ * 
+ * @public
+ * @since 1.0.0
  */
 export const undoHistoryCommand: ICommand = {
   name: 'undo:history',
@@ -190,6 +262,12 @@ export const undoHistoryCommand: ICommand = {
     
     const { limit, type } = context.args;
     
+    /**
+     * 格式化快照为历史项的辅助函数
+     * 
+     * @param snapshot - 命令快照
+     * @returns 格式化的历史项
+     */
     const formatSnapshot = (snapshot: any): IHistoryItem => {
       return {
         id: snapshot.id,
@@ -233,6 +311,20 @@ export const undoHistoryCommand: ICommand = {
 
 /**
  * 清空撤销历史命令
+ * 
+ * 清空所有撤销和重做历史记录的危险命令。
+ * 需要管理员权限和明确的确认才能执行。
+ * 
+ * @example
+ * ```typescript
+ * // 清空所有历史记录（需要确认）
+ * const result = await commandSystem.execute('undo:clear', { 
+ *   confirm: 'yes' 
+ * });
+ * ```
+ * 
+ * @public
+ * @since 1.0.0
  */
 export const clearHistoryCommand: ICommand = {
   name: 'undo:clear',
@@ -249,7 +341,7 @@ export const clearHistoryCommand: ICommand = {
       type: 'string',
       required: true,
       validation: {
-        enum: ['yes', 'YES']
+        enum: ['yes']
       }
     }
   ],
@@ -266,21 +358,24 @@ export const clearHistoryCommand: ICommand = {
     
     const { confirm } = context.args;
     
-    if (confirm.toLowerCase() !== 'yes') {
+    if (confirm !== 'yes') {
       return {
         success: false,
-        error: '需要确认才能清空历史记录'
+        error: '必须输入 "yes" 确认清空操作'
       };
     }
     
-    const previousCount = undoManager.getUndoHistory().length + undoManager.getRedoHistory().length;
+    const undoCount = undoManager.getUndoHistory().length;
+    const redoCount = undoManager.getRedoHistory().length;
+    
     undoManager.clear();
     
     return {
       success: true,
       data: {
         message: '撤销历史已清空',
-        clearedCount: previousCount
+        clearedUndoCount: undoCount,
+        clearedRedoCount: redoCount
       }
     };
   }
@@ -288,12 +383,29 @@ export const clearHistoryCommand: ICommand = {
 
 /**
  * 开始事务命令
+ * 
+ * 启动一个新的撤销事务的命令。事务允许将多个相关操作
+ * 组织为一个逻辑单元，可以一次性撤销或重做。
+ * 
+ * @example
+ * ```typescript
+ * // 开始一个新事务
+ * const result = await commandSystem.execute('undo:begin-transaction', {
+ *   name: 'batchFileOperation',
+ *   description: '批量文件操作'
+ * });
+ * 
+ * const transactionId = result.data.transactionId;
+ * ```
+ * 
+ * @public
+ * @since 1.0.0
  */
 export const beginTransactionCommand: ICommand = {
-  name: 'transaction:begin',
-  description: '开始一个新事务',
+  name: 'undo:begin-transaction',
+  description: '开始一个新的撤销事务',
   category: 'undo',
-  aliases: ['tx-begin', 'transaction-start'],
+  aliases: ['begin-tx', 'start-transaction'],
   
   parameters: [
     {
@@ -302,8 +414,8 @@ export const beginTransactionCommand: ICommand = {
       type: 'string',
       required: true,
       validation: {
-        min: 1,
-        max: 100
+        minLength: 1,
+        maxLength: 100
       }
     },
     {
@@ -312,7 +424,7 @@ export const beginTransactionCommand: ICommand = {
       type: 'string',
       required: false,
       validation: {
-        max: 500
+        maxLength: 500
       }
     }
   ],
@@ -335,16 +447,16 @@ export const beginTransactionCommand: ICommand = {
       return {
         success: true,
         data: {
+          message: `事务已开始: ${name}`,
           transactionId,
           name,
-          description,
-          message: `事务 "${name}" 已开始`
+          description
         }
       };
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : '开始事务失败'
+        error: `无法开始事务: ${(error as Error).message}`
       };
     }
   }
@@ -352,19 +464,33 @@ export const beginTransactionCommand: ICommand = {
 
 /**
  * 提交事务命令
+ * 
+ * 提交一个活动事务的命令。将事务中的所有操作
+ * 作为一个整体添加到撤销历史中。
+ * 
+ * @example
+ * ```typescript
+ * // 提交指定的事务
+ * const result = await commandSystem.execute('undo:commit-transaction', {
+ *   transactionId: 'tx-123'
+ * });
+ * ```
+ * 
+ * @public
+ * @since 1.0.0
  */
 export const commitTransactionCommand: ICommand = {
-  name: 'transaction:commit',
-  description: '提交当前事务',
+  name: 'undo:commit-transaction',
+  description: '提交一个活动的撤销事务',
   category: 'undo',
-  aliases: ['tx-commit', 'transaction-end'],
+  aliases: ['commit-tx', 'end-transaction'],
   
   parameters: [
     {
       name: 'transactionId',
-      description: '事务ID（可选，默认提交当前事务）',
+      description: '要提交的事务ID',
       type: 'string',
-      required: false
+      required: true
     }
   ],
   
@@ -379,33 +505,21 @@ export const commitTransactionCommand: ICommand = {
     }
     
     const { transactionId } = context.args;
-    const currentTransaction = undoManager.getCurrentTransaction();
-    
-    if (!currentTransaction) {
-      return {
-        success: false,
-        error: '当前没有活动的事务'
-      };
-    }
-    
-    const targetId = transactionId || currentTransaction.id;
     
     try {
-      undoManager.commitTransaction(targetId);
+      undoManager.commitTransaction(transactionId);
       
       return {
         success: true,
         data: {
-          transactionId: targetId,
-          name: currentTransaction.name,
-          commandCount: currentTransaction.snapshots.length,
-          message: `事务 "${currentTransaction.name}" 已提交`
+          message: `事务已提交: ${transactionId}`,
+          transactionId
         }
       };
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : '提交事务失败'
+        error: `无法提交事务: ${(error as Error).message}`
       };
     }
   }
@@ -413,19 +527,33 @@ export const commitTransactionCommand: ICommand = {
 
 /**
  * 回滚事务命令
+ * 
+ * 回滚一个活动事务的命令。撤销事务中的所有操作
+ * 并丢弃事务，操作不会出现在撤销历史中。
+ * 
+ * @example
+ * ```typescript
+ * // 回滚指定的事务
+ * const result = await commandSystem.execute('undo:rollback-transaction', {
+ *   transactionId: 'tx-123'
+ * });
+ * ```
+ * 
+ * @public
+ * @since 1.0.0
  */
 export const rollbackTransactionCommand: ICommand = {
-  name: 'transaction:rollback',
-  description: '回滚当前事务',
+  name: 'undo:rollback-transaction',
+  description: '回滚一个活动的撤销事务',
   category: 'undo',
-  aliases: ['tx-rollback', 'transaction-abort'],
+  aliases: ['rollback-tx', 'abort-transaction'],
   
   parameters: [
     {
       name: 'transactionId',
-      description: '事务ID（可选，默认回滚当前事务）',
+      description: '要回滚的事务ID',
       type: 'string',
-      required: false
+      required: true
     }
   ],
   
@@ -440,46 +568,49 @@ export const rollbackTransactionCommand: ICommand = {
     }
     
     const { transactionId } = context.args;
-    const currentTransaction = undoManager.getCurrentTransaction();
-    
-    if (!currentTransaction) {
-      return {
-        success: false,
-        error: '当前没有活动的事务'
-      };
-    }
-    
-    const targetId = transactionId || currentTransaction.id;
     
     try {
-      undoManager.rollbackTransaction(targetId);
+      undoManager.rollbackTransaction(transactionId);
       
       return {
         success: true,
         data: {
-          transactionId: targetId,
-          name: currentTransaction.name,
-          commandCount: currentTransaction.snapshots.length,
-          message: `事务 "${currentTransaction.name}" 已回滚`
+          message: `事务已回滚: ${transactionId}`,
+          transactionId
         }
       };
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : '回滚事务失败'
+        error: `无法回滚事务: ${(error as Error).message}`
       };
     }
   }
 };
 
 /**
- * 撤销状态命令
+ * 撤销状态查询命令
+ * 
+ * 查询撤销管理器当前状态的命令。提供详细的状态信息，
+ * 包括历史记录数量、事务状态、配置信息等。
+ * 
+ * @example
+ * ```typescript
+ * // 查询撤销系统状态
+ * const result = await commandSystem.execute('undo:status');
+ * console.log('撤销状态:', result.data);
+ * ```
+ * 
+ * @public
+ * @since 1.0.0
  */
 export const undoStatusCommand: ICommand = {
   name: 'undo:status',
-  description: '查看撤销系统状态',
+  description: '查看撤销系统的当前状态',
   category: 'undo',
-  aliases: ['undo-status'],
+  aliases: ['status', 'undo-info'],
+  
+  parameters: [],
   
   execute: async (context: ICommandContext): Promise<ICommandResult> => {
     const undoManager = context.env?.undoManager as IUndoManager;
@@ -491,6 +622,8 @@ export const undoStatusCommand: ICommand = {
       };
     }
     
+    const undoHistory = undoManager.getUndoHistory();
+    const redoHistory = undoManager.getRedoHistory();
     const currentTransaction = undoManager.getCurrentTransaction();
     
     return {
@@ -498,14 +631,24 @@ export const undoStatusCommand: ICommand = {
       data: {
         canUndo: undoManager.canUndo(),
         canRedo: undoManager.canRedo(),
-        undoCount: undoManager.getUndoHistory().length,
-        redoCount: undoManager.getRedoHistory().length,
+        undoCount: undoHistory.length,
+        redoCount: redoHistory.length,
         historyLimit: undoManager.getHistoryLimit(),
         currentTransaction: currentTransaction ? {
           id: currentTransaction.id,
           name: currentTransaction.name,
+          description: currentTransaction.description,
           status: currentTransaction.status,
-          commandCount: currentTransaction.snapshots.length
+          commandCount: currentTransaction.snapshots.length,
+          startTime: currentTransaction.startTime
+        } : null,
+        recentUndo: undoHistory.length > 0 ? {
+          commandName: undoHistory[undoHistory.length - 1].commandName,
+          timestamp: undoHistory[undoHistory.length - 1].timestamp
+        } : null,
+        recentRedo: redoHistory.length > 0 ? {
+          commandName: redoHistory[redoHistory.length - 1].commandName,
+          timestamp: redoHistory[redoHistory.length - 1].timestamp
         } : null
       }
     };
@@ -513,9 +656,22 @@ export const undoStatusCommand: ICommand = {
 };
 
 /**
- * 导出所有撤销命令
+ * 撤销命令集合
+ * 
+ * 包含所有内置撤销命令的数组，便于批量注册和管理。
+ * 
+ * @example
+ * ```typescript
+ * // 批量注册所有撤销命令
+ * undoCommands.forEach(command => {
+ *   commandSystem.register(command);
+ * });
+ * ```
+ * 
+ * @public
+ * @since 1.0.0
  */
-export const undoCommands: ICommand[] = [
+export const undoCommands = [
   undoCommand,
   redoCommand,
   undoHistoryCommand,
@@ -527,31 +683,218 @@ export const undoCommands: ICommand[] = [
 ];
 
 /**
- * 命令加载器
+ * 撤销命令加载器类
+ * 
+ * 提供便捷的方法来注册撤销相关的命令到命令系统中。
+ * 支持全量注册和选择性注册。
+ * 
+ * @example
+ * ```typescript
+ * // 注册所有撤销命令
+ * UndoCommandLoader.registerAllCommands(commandSystem);
+ * 
+ * // 只注册基础命令
+ * UndoCommandLoader.registerBasicCommands(commandSystem);
+ * 
+ * // 只注册事务命令
+ * UndoCommandLoader.registerTransactionCommands(commandSystem);
+ * ```
+ * 
+ * @public
+ * @since 1.0.0
  */
 export class UndoCommandLoader {
   /**
-   * 注册所有撤销命令到命令系统
+   * 注册所有撤销命令
+   * 
+   * 将所有内置的撤销命令注册到指定的命令系统中。
+   * 
+   * @param commandSystem - 要注册命令的命令系统实例
+   * 
+   * @example
+   * ```typescript
+   * UndoCommandLoader.registerAllCommands(commandSystem);
+   * console.log('所有撤销命令已注册');
+   * ```
+   * 
+   * @public
+   * @static
    */
   static registerAllCommands(commandSystem: any): void {
     undoCommands.forEach(command => {
       commandSystem.register(command);
     });
   }
-  
+
   /**
-   * 注册基础撤销命令（不包括事务相关）
+   * 注册基础撤销命令
+   * 
+   * 只注册基本的撤销和重做命令，不包括高级功能。
+   * 
+   * @param commandSystem - 要注册命令的命令系统实例
+   * 
+   * @example
+   * ```typescript
+   * UndoCommandLoader.registerBasicCommands(commandSystem);
+   * console.log('基础撤销命令已注册');
+   * ```
+   * 
+   * @public
+   * @static
    */
   static registerBasicCommands(commandSystem: any): void {
     const basicCommands = [
       undoCommand,
       redoCommand,
-      undoHistoryCommand,
       undoStatusCommand
     ];
     
     basicCommands.forEach(command => {
       commandSystem.register(command);
     });
+  }
+
+  /**
+   * 注册历史管理命令
+   * 
+   * 注册与历史记录查看和管理相关的命令。
+   * 
+   * @param commandSystem - 要注册命令的命令系统实例
+   * 
+   * @example
+   * ```typescript
+   * UndoCommandLoader.registerHistoryCommands(commandSystem);
+   * console.log('历史管理命令已注册');
+   * ```
+   * 
+   * @public
+   * @static
+   */
+  static registerHistoryCommands(commandSystem: any): void {
+    const historyCommands = [
+      undoHistoryCommand,
+      clearHistoryCommand
+    ];
+    
+    historyCommands.forEach(command => {
+      commandSystem.register(command);
+    });
+  }
+
+  /**
+   * 注册事务相关命令
+   * 
+   * 注册与事务管理相关的命令，包括开始、提交和回滚事务。
+   * 
+   * @param commandSystem - 要注册命令的命令系统实例
+   * 
+   * @example
+   * ```typescript
+   * UndoCommandLoader.registerTransactionCommands(commandSystem);
+   * console.log('事务管理命令已注册');
+   * ```
+   * 
+   * @public
+   * @static
+   */
+  static registerTransactionCommands(commandSystem: any): void {
+    const transactionCommands = [
+      beginTransactionCommand,
+      commitTransactionCommand,
+      rollbackTransactionCommand
+    ];
+    
+    transactionCommands.forEach(command => {
+      commandSystem.register(command);
+    });
+  }
+
+  /**
+   * 检查命令是否已注册
+   * 
+   * 检查指定的撤销命令是否已经在命令系统中注册。
+   * 
+   * @param commandSystem - 要检查的命令系统实例
+   * @param commandName - 要检查的命令名称
+   * @returns 如果命令已注册返回 true，否则返回 false
+   * 
+   * @example
+   * ```typescript
+   * const isRegistered = UndoCommandLoader.isCommandRegistered(commandSystem, 'undo');
+   * if (!isRegistered) {
+   *   console.log('撤销命令尚未注册');
+   * }
+   * ```
+   * 
+   * @public
+   * @static
+   */
+  static isCommandRegistered(commandSystem: any, commandName: string): boolean {
+    try {
+      const command = commandSystem.getCommand(commandName);
+      return command !== null && command !== undefined;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  /**
+   * 获取所有撤销命令的名称列表
+   * 
+   * 返回所有内置撤销命令的名称数组。
+   * 
+   * @returns 撤销命令名称数组
+   * 
+   * @example
+   * ```typescript
+   * const commandNames = UndoCommandLoader.getCommandNames();
+   * console.log('可用的撤销命令:', commandNames);
+   * ```
+   * 
+   * @public
+   * @static
+   */
+  static getCommandNames(): string[] {
+    return undoCommands.map(command => command.name);
+  }
+
+  /**
+   * 获取命令注册状态报告
+   * 
+   * 生成详细的命令注册状态报告，显示哪些命令已注册，哪些未注册。
+   * 
+   * @param commandSystem - 要检查的命令系统实例
+   * @returns 包含注册状态信息的对象
+   * 
+   * @example
+   * ```typescript
+   * const report = UndoCommandLoader.getRegistrationReport(commandSystem);
+   * console.log(`已注册: ${report.registered.length}, 未注册: ${report.unregistered.length}`);
+   * ```
+   * 
+   * @public
+   * @static
+   */
+  static getRegistrationReport(commandSystem: any): {
+    registered: string[];
+    unregistered: string[];
+    total: number;
+  } {
+    const registered: string[] = [];
+    const unregistered: string[] = [];
+    
+    undoCommands.forEach(command => {
+      if (this.isCommandRegistered(commandSystem, command.name)) {
+        registered.push(command.name);
+      } else {
+        unregistered.push(command.name);
+      }
+    });
+    
+    return {
+      registered,
+      unregistered,
+      total: undoCommands.length
+    };
   }
 } 

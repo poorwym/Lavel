@@ -6,7 +6,7 @@
   "main": "index.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "generate-client": "openapi-ts --input http://localhost:8000/openapi.json --output ./index.ts --client axios"
+    "generate-types": "openapi-ts --input http://localhost:8000/openapi.json --output ./api.d.ts"
   },
   "keywords": [],
   "author": "alex",
@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@types/node": "^24.0.12",
+    "axios": "^1.10.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
   }

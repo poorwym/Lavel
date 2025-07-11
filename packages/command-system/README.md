@@ -1,39 +1,45 @@
-# 命令系统 (@lavel/command-system)
+# 命令系统 (Command System)
 
-一个灵活、强大的 TypeScript 命令系统框架，支持参数验证、权限控制、中间件、事件系统等企业级功能。
+一个功能强大、类型安全的 TypeScript 命令系统，提供完整的命令注册、执行、中间件和事件管理功能。
+
+## 📋 目录
+
+- [特性](#特性)
+- [安装](#安装)
+- [快速开始](#快速开始)
+- [API 文档](#api-文档)
+- [中间件系统](#中间件系统)
+- [事件系统](#事件系统)
+- [内置命令](#内置命令)
+- [最佳实践](#最佳实践)
+- [类型安全](#类型安全)
 
 ## ✨ 特性
 
-- 🚀 **灵活的命令注册与管理** - 支持动态注册、注销和查找命令
-- 📋 **强大的参数验证** - 内置类型检查、格式验证、范围限制等
-- 🔐 **权限控制系统** - 支持基于角色的访问控制 (RBAC)
-- 🔌 **中间件支持** - 前置、后置处理和错误处理中间件
-- 📡 **事件系统** - 命令执行生命周期事件监听
-- ⚡ **批量执行** - 支持串行和并行批量命令执行
-- 🎯 **别名支持** - 命令可以设置多个别名
-- 📊 **性能监控** - 内置执行时间统计和性能测试工具
-- 🛡️ **错误处理** - 完善的异常捕获和处理机制
-- 📚 **TypeScript 支持** - 完整的类型定义和智能提示
+- 🔒 **类型安全**: 完整的 TypeScript 支持，提供出色的 IDE 体验
+- 🎯 **命令注册**: 灵活的命令定义和注册机制
+- 🔐 **权限控制**: 内置用户认证和权限验证系统
+- 🛠️ **中间件支持**: 强大的中间件系统，支持前置/后置处理
+- 📊 **参数验证**: 自动参数类型检查和自定义验证规则
+- 🎈 **别名支持**: 命令别名，提供便捷的快捷方式
+- 📡 **事件系统**: 完整的事件监听和通知机制
+- ⚡ **批量执行**: 支持顺序和并行批量命令执行
+- 🔍 **命令搜索**: 智能命令搜索和统计功能
+- 📦 **内置命令**: 丰富的预定义命令集合
 
-## 📁 项目结构
+## 🚀 安装
 
-```
-packages/command-system/
-├── types.ts             # 类型定义
-├── dispatcher.ts        # 调度执行器
-├── registry.ts          # 命令注册表
-├── index.ts            # 出口模块
-├── example.ts          # 使用示例
-└── commands/           # 示例命令集合
-    ├── basic.ts        # 基础工具命令
-    ├── user.ts         # 用户管理命令
-    ├── system.ts       # 系统管理命令
-    └── index.ts        # 命令索引
+```bash
+npm install @lavel/command-system
+# 或
+yarn add @lavel/command-system
+# 或
+pnpm add @lavel/command-system
 ```
 
-## 🚀 快速开始
+## 🏃‍♂️ 快速开始
 
-### 1. 基本使用
+### 基础使用
 
 ```typescript
 import { createCommandSystem } from '@lavel/command-system';
@@ -41,28 +47,26 @@ import { createCommandSystem } from '@lavel/command-system';
 // 创建命令系统实例
 const commandSystem = createCommandSystem({
   debug: true,
-  timeout: 30000,
+  timeout: 5000,
   enableAuth: true
 });
 
 // 定义一个简单命令
 const helloCommand = {
   name: 'hello',
-  description: '问候命令',
+  description: '打招呼命令',
   parameters: [
     {
       name: 'name',
-      description: '姓名',
-      type: 'string',
-      required: true
+      type: 'string' as const,
+      required: true,
+      description: '要打招呼的名字'
     }
   ],
-  execute: async (context) => {
-    return {
-      success: true,
-      data: `你好，${context.args.name}！`
-    };
-  }
+  execute: async (context) => ({
+    success: true,
+    data: { greeting: `Hello, ${context.args.name}!` }
+  })
 };
 
 // 注册命令
@@ -70,44 +74,73 @@ commandSystem.register(helloCommand);
 
 // 执行命令
 const result = await commandSystem.execute('hello', {
-  args: { name: '世界' },
-  env: {},
-  user: null
+  args: { name: 'World' },
+  env: {}
 });
 
-console.log(result); // { success: true, data: '你好，世界！' }
+console.log(result.data.greeting); // "Hello, World!"
 ```
 
-### 2. 使用内置命令
+### 使用内置命令
 
 ```typescript
-import { CommandLoader } from '@lavel/command-system/commands';
+import { CommandLoader } from '@lavel/command-system';
 
 // 注册所有内置命令
 CommandLoader.registerAllCommands(commandSystem);
 
-// 执行数学运算
-await commandSystem.execute('add', {
-  args: { a: 10, b: 20 },
-  env: { commandSystem }
-});
+// 或按分类注册
+CommandLoader.registerCommandsByCategory(commandSystem, ['math', 'text']);
 
-// 生成随机数
-await commandSystem.execute('random', {
-  args: { min: 1, max: 100, count: 5 },
-  env: { commandSystem }
+// 执行数学命令
+const addResult = await commandSystem.execute('add', {
+  args: { a: 5, b: 3 },
+  env: {}
 });
-
-// 查看帮助
-await commandSystem.execute('help', {
-  args: {},
-  env: { commandSystem }
-});
+console.log(addResult.data.result); // 8
 ```
 
-## 📖 核心概念
+## 📚 API 文档
 
-### 命令定义
+### CommandSystem 类
+
+主要的命令系统类，提供完整的命令管理功能。
+
+```typescript
+class CommandSystem {
+  // 注册单个命令
+  register(command: ICommand): void
+  
+  // 批量注册命令
+  registerCommands(commands: ICommand[]): void
+  
+  // 注销命令
+  unregister(commandName: string): boolean
+  
+  // 执行命令
+  execute(commandName: string, context: ICommandContext): Promise<ICommandResult>
+  
+  // 批量执行命令（顺序）
+  executeBatch(commands: Array<{name: string, context: ICommandContext}>): Promise<ICommandResult[]>
+  
+  // 批量执行命令（并行）
+  executeBatchParallel(commands: Array<{name: string, context: ICommandContext}>): Promise<ICommandResult[]>
+  
+  // 添加全局中间件
+  use(middleware: ICommandMiddleware): void
+  
+  // 获取命令
+  getCommand(commandName: string): ICommand | undefined
+  
+  // 获取所有命令
+  getAllCommands(): ICommand[]
+  
+  // 获取统计信息
+  getStats(): object
+}
+```
+
+### 命令定义接口
 
 ```typescript
 interface ICommand {
@@ -115,7 +148,7 @@ interface ICommand {
   description: string;             // 命令描述
   category?: string;               // 命令分类
   aliases?: string[];              // 命令别名
-  requireAuth?: boolean;           // 是否需要身份验证
+  requireAuth?: boolean;           // 是否需要认证
   permissions?: string[];          // 所需权限
   parameters?: ICommandParameter[]; // 参数定义
   execute: (context: ICommandContext) => Promise<ICommandResult> | ICommandResult;
@@ -124,35 +157,208 @@ interface ICommand {
 }
 ```
 
-### 参数验证
+### 参数定义
 
 ```typescript
-const command = {
-  name: 'create-user',
+interface ICommandParameter {
+  name: string;
+  description: string;
+  type: 'string' | 'number' | 'boolean' | 'array' | 'object';
+  required?: boolean;
+  defaultValue?: any;
+  validation?: {
+    pattern?: RegExp;     // 正则表达式验证
+    min?: number;         // 最小值/长度
+    max?: number;         // 最大值/长度
+    enum?: any[];         // 枚举值
+  };
+}
+```
+
+## 🔧 中间件系统
+
+中间件提供了强大的横切关注点处理能力。
+
+### 创建自定义中间件
+
+```typescript
+const loggingMiddleware: ICommandMiddleware = {
+  name: 'logger',
+  order: -1000, // 执行顺序
+  before: (context) => {
+    console.log(`执行命令: ${JSON.stringify(context.args)}`);
+    return context;
+  },
+  after: (context, result) => {
+    console.log(`命令完成: ${result.success ? '成功' : '失败'}`);
+    return result;
+  },
+  onError: (context, error) => {
+    console.error(`命令错误: ${error.message}`);
+    return { success: false, error: error.message };
+  }
+};
+
+// 添加中间件
+commandSystem.use(loggingMiddleware);
+```
+
+### 内置中间件
+
+```typescript
+import { builtinMiddleware } from '@lavel/command-system';
+
+// 日志中间件
+commandSystem.use(builtinMiddleware.logger({
+  enableConsole: true,
+  logLevel: 'info'
+}));
+
+// 性能监控中间件
+commandSystem.use(builtinMiddleware.performance({
+  slowThreshold: 1000 // 超过1秒警告
+}));
+
+// 限流中间件
+commandSystem.use(builtinMiddleware.rateLimit({
+  maxRequests: 100,
+  windowMs: 60000 // 每分钟最多100次请求
+}));
+
+// 权限检查中间件
+commandSystem.use(builtinMiddleware.authCheck({
+  requiredPermissions: ['admin'],
+  requireAll: false
+}));
+```
+
+## 📡 事件系统
+
+监听命令系统事件：
+
+```typescript
+const eventEmitter = commandSystem.getEventEmitter();
+
+// 监听命令注册事件
+eventEmitter.on('command.registered', (event) => {
+  console.log(`新命令已注册: ${event.commandName}`);
+});
+
+// 监听命令执行事件
+eventEmitter.on('command.executed', (event) => {
+  console.log(`命令执行完成: ${event.commandName}`);
+  console.log('执行结果:', event.data.result);
+});
+
+// 监听错误事件
+eventEmitter.on('command.error', (event) => {
+  console.error(`命令执行失败: ${event.commandName}`, event.error);
+});
+```
+
+## 🔨 内置命令
+
+### 数学命令
+
+```typescript
+// 加法命令
+await commandSystem.execute('add', {
+  args: { a: 5, b: 3 },
+  env: {}
+});
+
+// 随机数生成
+await commandSystem.execute('random', {
+  args: { min: 1, max: 100, count: 5 },
+  env: {}
+});
+```
+
+### 文本处理命令
+
+```typescript
+// 字符串反转
+await commandSystem.execute('reverse', {
+  args: { text: 'Hello World' },
+  env: {}
+});
+```
+
+### 用户管理命令
+
+```typescript
+// 创建用户
+await commandSystem.execute('user:create', {
+  args: { 
+    username: 'john', 
+    email: 'john@example.com',
+    role: 'user'
+  },
+  env: {},
+  user: { id: 'admin', permissions: ['user:create'] }
+});
+
+// 获取用户信息
+await commandSystem.execute('user:get', {
+  args: { userId: 'user123' },
+  env: {},
+  user: { id: 'admin', permissions: ['user:read'] }
+});
+```
+
+### 系统命令
+
+```typescript
+// 获取帮助
+await commandSystem.execute('help', {
+  args: { commandName: 'add' }, // 可选，获取特定命令帮助
+  env: { commandSystem }
+});
+
+// 系统状态
+await commandSystem.execute('status', {
+  args: {},
+  env: { commandSystem }
+});
+```
+
+## 💡 最佳实践
+
+### 1. 命令命名规范
+
+```typescript
+// 好的命名
+'user:create'     // 用冒号分隔命名空间
+'file:upload'
+'system:status'
+
+// 避免的命名
+'createUser'      // 驼峰式不够清晰
+'upload_file'     // 下划线不一致
+```
+
+### 2. 参数验证
+
+```typescript
+const createUserCommand = {
+  name: 'user:create',
   parameters: [
     {
       name: 'username',
-      type: 'string',
+      type: 'string' as const,
       required: true,
       validation: {
+        pattern: /^[a-zA-Z0-9_]+$/,
         min: 3,
-        max: 20,
-        pattern: /^[a-zA-Z0-9_]+$/
+        max: 20
       }
     },
     {
-      name: 'age',
-      type: 'number',
+      name: 'email',
+      type: 'string' as const,
+      required: true,
       validation: {
-        min: 0,
-        max: 150
-      }
-    },
-    {
-      name: 'role',
-      type: 'string',
-      validation: {
-        enum: ['admin', 'user', 'guest']
+        pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/
       }
     }
   ],
@@ -160,269 +366,125 @@ const command = {
 };
 ```
 
-### 权限控制
+### 3. 错误处理
 
 ```typescript
-const userManagementCommand = {
-  name: 'delete-user',
-  requireAuth: true,
-  permissions: ['user:delete', 'admin'],
+const myCommand = {
+  name: 'my:command',
   execute: async (context) => {
-    // 只有拥有 'user:delete' 或 'admin' 权限的用户才能执行
-    // ...
+    try {
+      // 命令逻辑
+      return { success: true, data: result };
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error.message || '未知错误' 
+      };
+    }
   }
 };
-
-// 执行时提供用户信息
-await commandSystem.execute('delete-user', {
-  args: { userId: '123' },
-  env: {},
-  user: {
-    id: 'admin-001',
-    permissions: ['admin']
-  }
-});
 ```
 
-### 中间件
+### 4. 中间件顺序
 
 ```typescript
-import { builtinMiddleware } from '@lavel/command-system';
+// 使用 order 属性控制执行顺序
+const authMiddleware = { name: 'auth', order: -1000 };     // 最先执行
+const validationMiddleware = { name: 'validation', order: -500 };
+const loggingMiddleware = { name: 'logging', order: 1000 }; // 最后执行
+```
 
-// 使用内置日志中间件
-commandSystem.use(builtinMiddleware.logger({ enableConsole: true }));
+## 🛡️ 类型安全
 
-// 使用性能监控中间件
-commandSystem.use(builtinMiddleware.performance({ slowThreshold: 1000 }));
+该命令系统提供完整的 TypeScript 类型支持：
 
-// 使用限流中间件
-commandSystem.use(builtinMiddleware.rateLimit({ 
-  maxRequests: 10, 
-  windowMs: 60000 
-}));
+```typescript
+// 所有接口都有完整的类型定义
+import { 
+  ICommand, 
+  ICommandContext, 
+  ICommandResult,
+  ICommandParameter,
+  ICommandMiddleware 
+} from '@lavel/command-system';
 
-// 自定义中间件
-const customMiddleware = {
-  name: 'audit',
-  order: -500,
-  before: async (context) => {
-    console.log(`用户 ${context.user?.id} 正在执行命令`);
-    return context;
-  },
-  after: async (context, result) => {
-    console.log(`命令执行${result.success ? '成功' : '失败'}`);
-    return result;
+// IDE 将提供完整的自动完成和类型检查
+const command: ICommand = {
+  name: 'example',
+  description: 'Example command',
+  execute: async (context: ICommandContext): Promise<ICommandResult> => {
+    // TypeScript 会检查返回类型
+    return { success: true, data: 'result' };
   }
 };
-
-commandSystem.use(customMiddleware);
 ```
 
-### 事件监听
+## 🔧 高级用法
+
+### 自定义验证
 
 ```typescript
-const eventEmitter = commandSystem.getEventEmitter();
-
-// 监听命令执行完成事件
-eventEmitter.on('command.executed', (event) => {
-  console.log(`命令 ${event.commandName} 执行完成`, event.data);
-});
-
-// 监听命令执行失败事件
-eventEmitter.on('command.error', (event) => {
-  console.error(`命令 ${event.commandName} 执行失败`, event.error);
-});
-```
-
-## 🛠️ 内置命令
-
-### 基础工具命令
-
-- `add` - 数字加法运算
-- `reverse` - 字符串反转
-- `random` - 随机数生成
-- `uuid` - UUID 生成
-- `timestamp` - 时间戳转换
-
-### 用户管理命令
-
-- `user:create` - 创建用户
-- `user:get` - 获取用户信息
-- `user:list` - 列出用户
-- `user:update` - 更新用户
-- `user:delete` - 删除用户
-- `user:login` - 用户登录
-
-### 系统管理命令
-
-- `help` - 显示帮助信息
-- `status` - 系统状态
-- `version` - 版本信息
-- `clear` - 清空控制台
-- `benchmark` - 性能测试
-- `exit` - 退出系统
-
-## 📋 使用示例
-
-### 运行完整示例
-
-```typescript
-import { runExamples } from '@lavel/command-system/example';
-
-// 运行所有内置示例
-await runExamples();
-```
-
-### 批量执行命令
-
-```typescript
-// 串行执行
-const results = await commandSystem.executeBatch([
-  { name: 'add', context: { args: { a: 1, b: 2 }, env: {} } },
-  { name: 'random', context: { args: { min: 1, max: 10 }, env: {} } }
-]);
-
-// 并行执行
-const results = await commandSystem.executeBatchParallel([
-  { name: 'uuid', context: { args: { count: 3 }, env: {} } },
-  { name: 'timestamp', context: { args: { action: 'now' }, env: {} } }
-]);
-```
-
-### 性能测试
-
-```typescript
-await commandSystem.execute('benchmark', {
-  args: {
-    commandName: 'add',
-    iterations: 1000,
-    args: { a: 1, b: 2 }
+const customCommand = {
+  name: 'transfer',
+  validate: async (context) => {
+    const { from, to, amount } = context.args;
+    // 自定义业务逻辑验证
+    if (from === to) return false;
+    if (amount <= 0) return false;
+    return true;
   },
-  env: { commandSystem }
-});
+  execute: async (context) => {
+    // 执行转账逻辑
+  }
+};
 ```
 
-## 🔧 配置选项
+### 命令组合
 
 ```typescript
-const commandSystem = createCommandSystem({
-  debug: true,           // 是否启用调试模式
-  timeout: 30000,        // 命令执行超时时间（毫秒）
-  enableAuth: true,      // 是否启用权限验证
-  enableLogging: true,   // 是否启用执行日志
-  errorHandler: (error, context) => {
-    // 自定义错误处理器
-    console.error('命令执行错误:', error);
-  }
-});
-```
-
-## 🏗️ 高级用法
-
-### 创建自定义命令分类
-
-```typescript
-// 创建数据库操作命令
-const dbCommands = [
-  {
-    name: 'db:connect',
-    category: 'database',
-    // ...
-  },
-  {
-    name: 'db:query',
-    category: 'database',
-    // ...
-  }
+// 创建命令工作流
+const workflow = [
+  { name: 'validate', context: validationContext },
+  { name: 'process', context: processContext },
+  { name: 'notify', context: notificationContext }
 ];
 
-// 批量注册
-CommandLoader.registerCommands(commandSystem, dbCommands);
+const results = await commandSystem.executeBatch(workflow);
 ```
 
-### 动态命令管理
+### 动态命令注册
 
 ```typescript
-// 动态注册命令
-commandSystem.register(newCommand);
-
-// 检查命令是否存在
-if (commandSystem.hasCommand('my-command')) {
-  // 执行命令
+// 运行时动态注册命令
+function createDynamicCommand(name: string, logic: Function) {
+  return {
+    name,
+    description: `动态生成的命令: ${name}`,
+    execute: async (context) => {
+      const result = await logic(context.args);
+      return { success: true, data: result };
+    }
+  };
 }
 
-// 获取特定分类的命令
-const mathCommands = commandSystem.getCommandsByCategory('math');
-
-// 获取统计信息
-const stats = commandSystem.getStats();
-console.log(`总计 ${stats.totalCommands} 个命令`);
-```
-
-## 🤝 扩展开发
-
-### 创建自定义中间件
-
-```typescript
-const authMiddleware: ICommandMiddleware = {
-  name: 'authentication',
-  order: -1000, // 最先执行
-  before: async (context) => {
-    if (!context.user) {
-      throw new Error('需要登录');
-    }
-    return context;
-  }
-};
-```
-
-### 实现复杂验证
-
-```typescript
-const complexCommand = {
-  name: 'complex-validation',
-  validate: async (context) => {
-    // 自定义复杂验证逻辑
-    const { startDate, endDate } = context.args;
-    return new Date(startDate) < new Date(endDate);
-  },
-  execute: async (context) => {
-    // 命令执行逻辑
-  }
-};
-```
-
-## 📊 性能优化
-
-1. **使用批量执行** - 对于多个独立命令，使用 `executeBatchParallel`
-2. **合理设置超时** - 避免长时间阻塞
-3. **中间件排序** - 通过 `order` 属性优化中间件执行顺序
-4. **事件监听** - 避免过多的事件监听器
-
-## 🐛 调试
-
-启用调试模式：
-
-```typescript
-const commandSystem = createCommandSystem({ 
-  debug: true,
-  enableLogging: true 
+const dynamicCmd = createDynamicCommand('dynamic:test', (args) => {
+  return `处理参数: ${JSON.stringify(args)}`;
 });
+
+commandSystem.register(dynamicCmd);
 ```
 
-使用内置日志中间件：
+## 📊 性能考虑
 
-```typescript
-commandSystem.use(builtinMiddleware.logger({ 
-  enableConsole: true,
-  logLevel: 'debug' 
-}));
-```
+- 命令执行支持超时控制
+- 内置性能监控中间件
+- 支持批量并行执行以提高效率
+- 事件系统采用异步处理，不会阻塞命令执行
 
-## 📄 许可证
+## 🤝 贡献
 
-ISC
+欢迎提交 Issue 和 Pull Request！
 
-## 👨‍💻 作者
+## �� 许可证
 
-alex 
+MIT License 
